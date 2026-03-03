@@ -1,10 +1,10 @@
 // Mock data for Medical Equipment E-Commerce (B2C + B2B)
 
 export const categories = [
-  { id: 1, name: 'Diabetes Care', image: 'https://images.unsplash.com/photo-1593491034932-844ab981ed7c?w=400&h=300&fit=crop', count: 312 },
-  { id: 2, name: 'Respiratory & CPAP', image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=400&h=300&fit=crop', count: 187 },
-  { id: 3, name: 'Heart & BP Monitors', image: 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=300&fit=crop', count: 245 },
-  { id: 4, name: 'Mobility & Recovery', image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop', count: 156 },
+  { id: 1, name: 'Diabetes Care', image: 'https://api.parashospitals.com/uploads/2020/06/Diabetes.jpg?w=400&h=300&fit=crop', count: 312 },
+  { id: 2, name: 'Respiratory & CPAP', image: 'https://www.popsci.com/wp-content/uploads/2023/06/29/Depositphotos_110574394_L.jpg?quality=85?w=400&h=300&fit=crop', count: 187 },
+  { id: 3, name: 'Heart & BP Monitors', image: 'https://paramedstore.com/cdn/shop/files/1-new-new_1_1_copy_1_530x@2x.jpg?v=1708938634?w=400&h=300&fit=crop', count: 245 },
+  { id: 4, name: 'Mobility & Recovery', image: 'https://www.braceworks.ca//wp-content/uploads/2015/06/quell-leg2.jpeg?w=400&h=300&fit=crop', count: 156 },
 ];
 
 export const products = [
@@ -16,7 +16,7 @@ export const products = [
     originalPrice: 229.99,
     rating: 4.8,
     reviews: 1247,
-    image: 'https://images.unsplash.com/photo-1593491034932-844ab981ed7c?w=400&h=400&fit=crop',
+    image: 'https://www.1mg.com/articles/wp-content/uploads/2025/02/shutterstock_1928967416.jpg',
     badge: 'Best Seller',
     inStock: true,
     description: '14-day continuous glucose monitor with painless sensor application, real-time smartphone alerts, and trend tracking. No finger-prick calibration needed.',
@@ -36,7 +36,7 @@ export const products = [
     price: 849.99,
     rating: 4.7,
     reviews: 892,
-    image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=400&h=400&fit=crop',
+    image: 'https://www.yourcaremedicalsupply.com/Images_Content/Site1/Images/Articles/sleep-apnea-and-cpap-machines.png',
     badge: 'Top Rated',
     inStock: true,
     description: 'Premium auto-adjusting CPAP with built-in humidifier, whisper-quiet motor (25 dBA), and myAir app for sleep tracking and coaching.',
@@ -57,7 +57,7 @@ export const products = [
     originalPrice: 89.99,
     rating: 4.6,
     reviews: 3421,
-    image: 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=400&h=400&fit=crop',
+    image: 'https://www.news-medical.net/image-handler/picture/2019/12/shutterstock_730380310.jpg',
     badge: 'Best Seller',
     inStock: true,
     description: 'Upper-arm blood pressure monitor with dual-screen display, irregular heartbeat detection, and storage for two users (200 readings each).',
@@ -78,7 +78,7 @@ export const products = [
     originalPrice: 49.99,
     rating: 4.5,
     reviews: 5742,
-    image: 'https://images.unsplash.com/photo-1551076805-e1869033e561?w=400&h=400&fit=crop',
+    image: 'https://www.cmihealth.com/cdn/shop/articles/cmihealthinc-seotool-48350-understandinghowto-blogbanner1_838x.jpg?v=1594663159',
     badge: 'Value Pick',
     inStock: true,
     description: 'Medical-grade pulse oximeter with OLED display showing SpO₂, pulse rate, and perfusion index. Results in under 10 seconds.',
@@ -98,7 +98,7 @@ export const products = [
     price: 59.99,
     rating: 4.4,
     reviews: 876,
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=400&fit=crop',
+    image: 'https://image.made-in-china.com/2f0j00unpoDeCGCgqM/Factory-Insulin-Cooler-Travel-Case-Expandable-Insulated-Diabetic-Bag-with-2-180g-Ice-Packs-for-Double-Cooling-Time-Portable-Medication-Cooler-Bag-for-Insulin.jpg',
     inStock: true,
     description: 'TSA-approved insulin cooling case that keeps medication at 36–46°F for up to 36 hours. Fits pens, vials, and pump supplies.',
     specs: {
@@ -117,7 +117,7 @@ export const products = [
     price: 49.99,
     rating: 4.6,
     reviews: 2103,
-    image: 'https://images.unsplash.com/photo-1584515933487-779824d29309?w=400&h=400&fit=crop',
+    image: 'https://www.news-medical.net/image-handler/picture/2020/7/shutterstock_621845186.jpg',
     badge: 'Popular',
     inStock: true,
     description: 'Ultra-quiet handheld mesh nebulizer for asthma and respiratory therapy. USB rechargeable, pocket-sized, and family-friendly.',
@@ -137,7 +137,7 @@ export const products = [
     price: 44.99,
     rating: 4.5,
     reviews: 1654,
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=400&fit=crop',
+    image: 'https://www.mobilitysolution.in/storage/uploads/products/hinged-knee-brace.webp',
     inStock: true,
     description: 'Adjustable hinged knee brace for post-surgery recovery, ACL/MCL support, and arthritis relief. Breathable neoprene with anti-slip design.',
     specs: {
@@ -156,7 +156,7 @@ export const products = [
     price: 69.99,
     rating: 4.3,
     reviews: 982,
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=400&fit=crop',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi6H6fjnv3VFYJWvS-nVggFKMr3FTy5R89_A&s',
     badge: 'New',
     inStock: true,
     description: 'Wi-Fi smart scale measuring 13 body metrics including weight, BMI, body fat %, muscle mass, and water weight. Syncs with Apple Health and Google Fit.',

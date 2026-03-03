@@ -54,7 +54,7 @@ export default function ContactPage() {
           {/* CONTACT INFO CARDS — Upgraded */}
           <div className="space-y-6">
             {[
-              { icon: Phone, title: 'Call Us', detail: '1-800-MED-EQUIP', sub: 'Mon–Fri, 8am–8pm EST' },
+              { icon: Phone, title: 'Call Us', detail: '+91 98182 67167', sub: 'Mon–Fri, 8am–8pm EST' },
               { icon: Mail, title: 'Email Us', detail: 'support@medequippro.com', sub: 'Response within 24 hours' },
               { icon: MapPin, title: 'Visit Us', detail: '100 Health Ave, San Francisco', sub: 'CA 94102, USA' },
               { icon: Clock, title: 'Business Hours', detail: 'Mon–Fri: 8am – 8pm EST', sub: 'Sat: 9am – 5pm EST' },

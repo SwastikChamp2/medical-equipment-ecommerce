@@ -49,7 +49,7 @@ export function PublicHeader({ cartCount = 3 }) {
         <div className="container-main flex justify-between items-center">
           <span>✨ Free shipping on orders over $35 • Easy 30-day returns</span>
           <div className="flex items-center gap-4">
-            <a href="tel:1-800-MED-EQUIP" className="hover:underline">1-800-MED-EQUIP</a>
+            <a href="tel:+91-9818267167" className="hover:underline">+91 9818267167</a>
           </div>
         </div>
       </div>
@@ -104,8 +104,8 @@ export function PublicHeader({ cartCount = 3 }) {
                   key={link.path + link.label}
                   to={link.path}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === link.path
-                      ? 'text-primary bg-primary-light'
-                      : 'text-text-secondary hover:text-primary hover:bg-gray-50'
+                    ? 'text-primary bg-primary-light'
+                    : 'text-text-secondary hover:text-primary hover:bg-gray-50'
                     }`}
                 >
                   {link.label}
