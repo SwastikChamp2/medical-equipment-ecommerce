@@ -3,8 +3,8 @@ import { createContext, useContext, useState } from 'react';
 const AuthContext = createContext(null);
 
 const mockUser = {
-  name: 'Nikshit Saini',
-  email: 'nikshit@example.com',
+  name: 'John Doe',
+  email: 'john.doe@example.com',
   phone: '+1 (555) 123-4567',
   avatar: 'https://i.pravatar.cc/100?img=33',
   addresses: [
