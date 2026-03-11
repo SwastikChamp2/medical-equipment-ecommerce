@@ -4,6 +4,7 @@ import { Package, Truck, MapPin, Copy, CheckCircle, Clock, ArrowLeft, Loader2 } 
 import StatusBadge from '../components/StatusBadge';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
+import { formatCurrency } from '../utils/formatUtils';
 import { getOrderById } from '../services/orderService';
 
 export default function OrderDetailPage() {
@@ -57,7 +58,9 @@ export default function OrderDetailPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">{order.id}</h1>
-          <p className="text-sm text-text-secondary mt-1">Placed on {order.date}</p>
+          <p className="text-sm text-text-secondary mt-1">
+            Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || 'Unknown')}
+          </p>
         </div>
         <StatusBadge status={order.status} />
       </div>
@@ -67,16 +70,14 @@ export default function OrderDetailPage() {
         <div className="flex items-center justify-between">
           {steps.map((step, i) => (
             <div key={step.label} className="flex-1 flex flex-col items-center relative">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10 ${
-                step.done ? 'bg-success text-white' : 'bg-gray-100 text-text-secondary'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10 ${step.done ? 'bg-success text-white' : 'bg-gray-100 text-text-secondary'
+                }`}>
                 {step.done ? <CheckCircle size={16} /> : i + 1}
               </div>
               <p className={`text-xs mt-2 font-medium ${step.done ? 'text-success' : 'text-text-secondary'}`}>{step.label}</p>
               {i < steps.length - 1 && (
-                <div className={`absolute top-4 left-[calc(50%+16px)] right-[calc(-50%+16px)] h-0.5 ${
-                  steps[i + 1].done ? 'bg-success' : 'bg-gray-200'
-                }`} />
+                <div className={`absolute top-4 left-[calc(50%+16px)] right-[calc(-50%+16px)] h-0.5 ${steps[i + 1].done ? 'bg-success' : 'bg-gray-200'
+                  }`} />
               )}
             </div>
           ))}
@@ -95,13 +96,13 @@ export default function OrderDetailPage() {
                   <Link to={`/product/${item.productId}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">{item.name}</Link>
                   <p className="text-xs text-text-secondary mt-0.5">Qty: {item.quantity}</p>
                 </div>
-                <p className="text-sm font-bold text-text-primary">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="text-sm font-bold text-text-primary">{formatCurrency(item.price * item.quantity)}</p>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-border flex justify-between">
             <span className="text-sm font-semibold text-text-primary">Order Total</span>
-            <span className="text-lg font-bold text-primary">${(order.total || 0).toFixed(2)}</span>
+            <span className="text-lg font-bold text-primary">{formatCurrency(order.total || 0)}</span>
           </div>
         </div>
 

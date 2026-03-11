@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom';
 import {
     ShoppingBag, Filter, ChevronRight, Eye,
     Truck, Calendar, AlertCircle, Clock,
@@ -28,7 +29,8 @@ const AdminOrdersPage = () => {
         if (result.success) {
             setOrders(result.orders);
         } else {
-            toast.error("Failed to fetch orders");
+            setOrders([]); // Clear stale data on error
+            toast.error("Failed to fetch orders. Please check your internet or try again later.");
         }
         setLoading(false);
     }, [statusFilter, searchTerm]);
@@ -64,7 +66,9 @@ const AdminOrdersPage = () => {
 
     const OrderIDCell = ({ order }) => (
         <td className="py-6 px-10 font-bold text-[#2563eb] text-[14.5px]">
-            #{order.orderId || (order.id && order.id.substring(0, 8).toUpperCase()) || 'N/A'}
+            <Link to={`/admin/orders/${order.id}`} className="hover:underline">
+                #{order.orderId || (order.id && order.id.substring(0, 8).toUpperCase()) || 'N/A'}
+            </Link>
         </td>
     );
 
@@ -205,8 +209,16 @@ const AdminOrdersPage = () => {
                     ) : orders.length === 0 ? (
                         <div className="text-center py-20 mx-8 my-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                             <ShoppingBag className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-                            <h3 className="text-xl font-bold text-slate-900">No orders found</h3>
-                            <p className="text-slate-400 font-medium">Try adjusting your filters or search term</p>
+                            <h3 className="text-xl font-bold text-slate-900">
+                                {statusFilter === 'all'
+                                    ? "No orders found"
+                                    : `No Orders pending for ${statusFilter}`}
+                            </h3>
+                            <p className="text-slate-400 font-medium">
+                                {searchTerm
+                                    ? `No results match your search "${searchTerm}"`
+                                    : "Try adjusting your filters or status selection"}
+                            </p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse min-w-[1000px] lg:min-w-0">
@@ -242,12 +254,12 @@ const AdminOrdersPage = () => {
                                         </td>
                                         <td className="py-6 px-8 text-right">
                                             <div className="flex gap-4 justify-end items-center">
-                                                <button
-                                                    onClick={() => { setSelectedOrder(order); setModalMode('view'); setIsModalOpen(true); }}
+                                                <Link
+                                                    to={`/admin/orders/${order.id}`}
                                                     className="text-slate-400 hover:text-blue-600 transition-colors"
                                                 >
                                                     <Eye className="w-5 h-5" />
-                                                </button>
+                                                </Link>
                                                 <button
                                                     onClick={() => { setSelectedOrder(order); setModalMode('tracking'); setIsModalOpen(true); }}
                                                     className="text-slate-400 hover:text-slate-600 transition-colors"

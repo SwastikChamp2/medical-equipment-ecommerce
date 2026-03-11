@@ -6,7 +6,7 @@ import { getCategories } from '../services/categoryService'; // Use static impor
 
 export default function FilterSidebar({ onFilterChange }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [priceRange, setPriceRange] = useState([0, 50000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [minRating, setMinRating] = useState(0);
   const [brands, setBrands] = useState([]);
@@ -20,7 +20,7 @@ export default function FilterSidebar({ onFilterChange }) {
         setBrands(brandNames);
       })
       .catch((err) => console.error('Error fetching brands:', err));
-      
+
     // Fetch categories
     getCategories()
       .then((data) => {

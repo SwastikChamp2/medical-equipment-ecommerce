@@ -6,11 +6,12 @@ import {
     Plus,
     Check,
     AlertCircle,
-    Download, Gift, Banknote, TrendingUp, TrendingDown,
-    Filter
+    Download, Gift, IndianRupee, TrendingUp, TrendingDown,
+    Filter, Banknote
 } from "lucide-react";
 import { Modal, Button, Card, LoadingSpinner, Badge, Input } from "../../components/ui";
 import { toast } from "react-toastify";
+import { formatCurrency } from "../../utils/formatUtils";
 
 /**
  * AdminCouponsPage Component
@@ -102,7 +103,7 @@ const AdminCouponsPage = () => {
         return {
             active,
             redemptions: redemptions.toLocaleString(),
-            volume: volume.toLocaleString('en-US', { style: 'currency', currency: 'INR' })
+            volume: formatCurrency(volume)
         };
     }, [coupons]);
 
@@ -540,10 +541,10 @@ const AdminCouponsPage = () => {
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <p className="text-sm font-bold text-gray-900">
-                                                        {coupon.discountType === "percentage" ? `${coupon.discountValue}% Off` : `₹${coupon.discountValue} Fixed`}
+                                                        {coupon.discountType === "percentage" ? `${coupon.discountValue}% Off` : formatCurrency(coupon.discountValue) + " Fixed"}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 font-medium">
-                                                        {coupon.minOrderAmount > 0 ? `Min: ₹${coupon.minOrderAmount}` : 'No Minimum'}
+                                                        {coupon.minOrderAmount > 0 ? `Min: ${formatCurrency(coupon.minOrderAmount)}` : 'No Minimum'}
                                                     </p>
                                                 </td>
                                                 <td className="px-6 py-5">

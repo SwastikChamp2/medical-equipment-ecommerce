@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Package, ChevronRight, Loader2 } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
+import { formatCurrency } from '../utils/formatUtils';
 import { getOrders } from '../services/orderService';
 
 export default function MyOrdersPage() {
@@ -13,9 +14,12 @@ export default function MyOrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
+        setLoading(true);
         if (user?.uid) {
           const data = await getOrders(user.uid);
           setOrders(data);
+        } else {
+          setOrders([]);
         }
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -60,7 +64,9 @@ export default function MyOrdersPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-text-primary">{order.id}</p>
-                    <p className="text-xs text-text-secondary">Placed on {order.date}</p>
+                    <p className="text-xs text-text-secondary">
+                      Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || 'Unknown')}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -77,7 +83,7 @@ export default function MyOrdersPage() {
                 <p className="text-sm text-text-secondary flex-1">
                   {(order.items || []).map((i) => i.name).join(', ')}
                 </p>
-                <p className="text-lg font-bold text-text-primary">${(order.total || 0).toFixed(2)}</p>
+                <p className="text-lg font-bold text-text-primary">{formatCurrency(order.total || 0)}</p>
               </div>
             </Link>
           ))}

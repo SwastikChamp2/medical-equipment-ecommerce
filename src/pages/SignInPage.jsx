@@ -38,7 +38,7 @@ export default function SignInPage() {
       }
 
       if (result.success) {
-        navigate('/admin');
+        navigate('/profile');
       } else {
         setError(result.error || 'Authentication failed');
       }
@@ -158,9 +158,18 @@ export default function SignInPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-1.5 mt-6 text-xs text-text-secondary">
-          <Shield size={12} className="text-primary" />
-          <span>Your data is protected with 256-bit encryption</span>
+        <div className="flex flex-col items-center justify-center gap-3 mt-8">
+          <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+            <Shield size={12} className="text-primary" />
+            <span>Your data is protected with 256-bit encryption</span>
+          </div>
+          <Link
+            to="/admin"
+            className="text-[11px] font-bold text-slate-400 hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-1.5"
+          >
+            <Lock size={10} />
+            Administrator Access
+          </Link>
         </div>
       </div>
     </div>

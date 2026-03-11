@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
 import Button from '../components/Button';
+import { formatCurrency } from '../utils/formatUtils';
 import { useWishlist } from '../context/WishlistContext';
 
 export default function WishlistPage() {
@@ -31,7 +32,7 @@ export default function WishlistPage() {
               <div className="p-4">
                 <Link to={`/product/${product.id}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors line-clamp-2">{product.name}</Link>
                 <div className="flex items-center justify-between mt-3">
-                  <p className="text-lg font-bold text-primary">${product.price}</p>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => removeItem(product.id)}

@@ -4,9 +4,9 @@ import { db } from "../../firebase";
 import { motion } from "framer-motion";
 import {
     Mail, Search, Plus, Filter,
-    Download, UserX, CheckCircle, Chrome,
+    Download, UserX, Chrome,
     ExternalLink, ShoppingBag, Slash,
-    Users, Stethoscope, Building2, ClipboardList
+    Users, Shield
 } from "lucide-react";
 import { Modal, Button, Card, LoadingSpinner, Badge, Input } from "../../components/ui";
 import { toast } from "react-toastify";
@@ -26,15 +26,14 @@ const AdminUsersPage = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState("view"); // view, profilePic, orders
-    const [error, setError] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
     const [stats, setStats] = useState({
         total: 0,
-        doctors: 0,
-        b2b: 0,
-        pending: 0
+        admins: 0,
+        active: 0,
+        suspended: 0
     });
 
     useEffect(() => {
@@ -51,10 +50,14 @@ const AdminUsersPage = () => {
      */
     const fetchUsers = async () => {
         setLoading(true);
-        setError(null);
         try {
             const usersCol = collection(db, "users");
-            const userSnapshot = await getDocs(usersCol);
+            const adminsCol = collection(db, "admins");
+
+            const [userSnapshot, adminSnapshot] = await Promise.all([
+                getDocs(usersCol),
+                getDocs(adminsCol)
+            ]);
 
             // Optimization: Fetch orders once to avoid per-user queries if possible
             let allOrders = [];
@@ -76,44 +79,60 @@ const AdminUsersPage = () => {
                 const totalSpent = userOrders.reduce((sum, order) => sum + (order.total || 0), 0);
                 const orderCount = userOrders.length;
 
-                // Mock role and verification status for UI demonstration to match reference
-                const mockRole = userData.role || (Math.random() > 0.7 ? (Math.random() > 0.5 ? 'B2B Manager' : 'Admin') : 'Customer');
-                const mockVStatus = userData.vStatus || (Math.random() > 0.6 ? (Math.random() > 0.5 ? 'TAX PENDING' : 'NO DOCS') : 'VERIFIED');
-                const mockAccStatus = userData.isBanned ? 'Suspended' : (Math.random() > 0.8 ? 'Pending' : 'Active');
+                const role = userData.role === 'Admin' ? 'Admin' : 'User';
+                const accStatus = userData.isBanned ? 'Suspended' : 'Active';
 
                 return {
                     ...userData,
                     orders: userOrders,
                     totalSpent,
                     orderCount,
-                    role: mockRole,
-                    vStatus: mockVStatus,
-                    accStatus: mockAccStatus,
+                    role: role,
+                    accStatus: accStatus,
                     averageOrderValue: orderCount > 0 ? totalSpent / orderCount : 0
                 };
             });
 
-            setUsers(userList);
+            // Map admins collection documents
+            const adminList = adminSnapshot.docs.map((adminDoc) => {
+                const adminData = { id: adminDoc.id, ...adminDoc.data() };
+
+                return {
+                    ...adminData,
+                    orders: [], // Admins typically don't have orders, or they'd be in the users collection
+                    totalSpent: 0,
+                    orderCount: 0,
+                    role: 'Admin', // Force role to Admin for documents in this collection
+                    accStatus: 'Active',
+                    averageOrderValue: 0,
+                    // Ensure they have a name if missing
+                    name: adminData.name || "Administrator"
+                };
+            });
+
+            // Combine both lists
+            const combinedList = [...userList, ...adminList];
+
+            setUsers(combinedList);
 
             // Calculate stats
             const now = new Date();
             const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const newUsers = userList.filter(user =>
+            const newUsers = combinedList.filter(user =>
                 user.createdAt && (user.createdAt.seconds
                     ? new Date(user.createdAt.seconds * 1000)
                     : new Date(user.createdAt)) >= firstDayOfMonth
             );
-            const bannedUsers = userList.filter(user => user.isBanned);
+            const bannedUsers = combinedList.filter(user => user.isBanned);
 
             setStats({
-                total: userList.length.toLocaleString(),
-                doctors: userList.filter(u => u.role === 'Doctor' || u.name?.toLowerCase().includes("dr.")).length.toLocaleString(),
-                b2b: userList.filter(u => u.role === 'B2B Manager' || u.role === 'Hospital Manager').length.toLocaleString(),
-                pending: userList.filter(u => u.vStatus === 'TAX PENDING' || u.vStatus === 'NO DOCS').length.toLocaleString()
+                total: combinedList.length.toLocaleString(),
+                admins: combinedList.filter(u => u.role === 'Admin').length.toLocaleString(),
+                active: combinedList.filter(u => !u.isBanned).length.toLocaleString(),
+                suspended: combinedList.filter(u => u.isBanned).length.toLocaleString()
             });
         } catch (error) {
             console.error("Error fetching users:", error);
-            setError(error.message);
             toast.error("Failed to load users");
         } finally {
             setLoading(false);
@@ -140,10 +159,8 @@ const AdminUsersPage = () => {
             filtered = filtered.filter(user => !user.isBanned);
         } else if (filterStatus === "banned") {
             filtered = filtered.filter(user => user.isBanned);
-        } else if (filterStatus === "doctors") {
-            filtered = filtered.filter(user => user.role === "Doctor" || user.name?.toLowerCase().includes("dr."));
-        } else if (filterStatus === "managers") {
-            filtered = filtered.filter(user => user.role === "B2B Manager" || user.role === "Hospital Manager");
+        } else if (filterStatus === "users") {
+            filtered = filtered.filter(user => user.role === "User");
         } else if (filterStatus === "admins") {
             filtered = filtered.filter(user => user.role === "Admin");
         }
@@ -305,7 +322,7 @@ const AdminUsersPage = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
                 <div>
                     <h1 className="text-[32px] font-black text-slate-900 tracking-tight mb-2">User Management</h1>
-                    <p className="text-slate-500 font-medium">Manage accounts for medical professionals and institutional buyers.</p>
+                    <p className="text-slate-500 font-medium">Manage and administrator accounts and customer profiles.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <Button
@@ -328,10 +345,10 @@ const AdminUsersPage = () => {
             {/* Stats Cards Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
                 {[
-                    { label: 'Total Registered', value: stats.total, icon: <Users className="w-6 h-6 text-blue-600" />, bgColor: 'bg-blue-50/50', borderColor: 'border-blue-100/50', change: '+12%' },
-                    { label: 'Doctors', value: stats.doctors, icon: <Stethoscope className="w-6 h-6 text-orange-500" />, bgColor: 'bg-orange-50/50', borderColor: 'border-orange-100/50', change: '+5%' },
-                    { label: 'B2B Managers', value: stats.b2b, icon: <Building2 className="w-6 h-6 text-purple-500" />, bgColor: 'bg-purple-50/50', borderColor: 'border-purple-100/50', change: '+18%' },
-                    { label: 'Pending Verification', value: stats.pending, icon: <ClipboardList className="w-6 h-6 text-blue-500" />, bgColor: 'bg-blue-50/50', borderColor: 'border-blue-100/50', badge: '8 Pending' },
+                    { label: 'Total Users', value: stats.total, icon: <Users className="w-6 h-6 text-blue-600" />, bgColor: 'bg-blue-50/50', borderColor: 'border-blue-100/50', change: '+12%' },
+                    { label: 'Active Accounts', value: stats.active, icon: <Users className="w-6 h-6 text-emerald-500" />, bgColor: 'bg-emerald-50/50', borderColor: 'border-emerald-100/50', change: '+5%' },
+                    { label: 'Suspended', value: stats.suspended, icon: <UserX className="w-6 h-6 text-red-500" />, bgColor: 'bg-red-50/50', borderColor: 'border-red-100/50' },
+                    { label: 'Administrators', value: stats.admins, icon: <Shield className="w-6 h-6 text-purple-500" />, bgColor: 'bg-purple-50/50', borderColor: 'border-purple-100/50' },
                 ].map((stat, i) => (
                     <Card key={i} className="p-6 border-slate-100/80 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
@@ -354,21 +371,20 @@ const AdminUsersPage = () => {
                     <div className="flex items-center gap-6">
                         {[
                             { label: 'All Users', value: 'all' },
-                            { label: 'Doctors', value: 'doctors' },
-                            { label: 'Hospital Managers', value: 'managers' },
+                            { label: 'Users', value: 'users' },
                             { label: 'Admins', value: 'admins' },
                         ].map((tab) => (
                             <button
                                 key={tab.value}
                                 onClick={() => setFilterStatus(tab.value)}
-                                className={`py-6 text-[13px] font-bold tracking-wide border-b-2 transition-all relative ${filterStatus === tab.value
-                                    ? 'text-blue-600 border-blue-600'
-                                    : 'text-slate-400 border-transparent hover:text-slate-600'
+                                className={`py-6 text-[13px] font-bold tracking-wide transition-all relative ${filterStatus === tab.value
+                                    ? 'text-blue-600'
+                                    : 'text-slate-400 hover:text-slate-600'
                                     }`}
                             >
                                 {tab.label}
                                 {filterStatus === tab.value && (
-                                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
                                 )}
                             </button>
                         ))}
@@ -378,11 +394,16 @@ const AdminUsersPage = () => {
                         <div className="relative">
                             <select
                                 className="appearance-none bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-2 pr-10 text-[13px] font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/10"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val.includes('Active')) setFilterStatus('active');
+                                    else if (val.includes('Suspended')) setFilterStatus('banned');
+                                    else setFilterStatus('all');
+                                }}
                             >
                                 <option>Status: All</option>
                                 <option>Status: Active</option>
                                 <option>Status: Suspended</option>
-                                <option>Status: Pending</option>
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                 <Filter className="w-4 h-4 text-slate-400" />
@@ -407,31 +428,19 @@ const AdminUsersPage = () => {
 
                 {/* Table Section */}
                 <div className="overflow-x-auto min-h-[400px] scrollbar-hide">
-                    {error && (
-                        <div className="p-8">
-                            <div className="bg-red-50 border border-red-100 rounded-xl p-6 text-center shadow-sm">
-                                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Slash className="w-6 h-6 text-red-600" />
-                                </div>
-                                <h3 className="text-red-900 font-black text-lg mb-2">Access Restricted</h3>
-                                <p className="text-red-600/80 text-[13px] font-bold max-w-sm mx-auto mb-6">
-                                    {error.includes('permission')
-                                        ? "You don't have enough permission to view the users list. Please ensure you're logged in as an administrator."
-                                        : `We encountered an issue: ${error}`}
-                                </p>
-                                <Button
-                                    onClick={fetchUsers}
-                                    variant="outline"
-                                    className="border-red-200 text-red-600 hover:bg-red-50"
-                                >
-                                    Retry Connection
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                     {loading ? (
                         <div className="flex justify-center py-20">
                             <LoadingSpinner size="lg" text="Fetching users..." />
+                        </div>
+                    ) : filteredUsers.length === 0 ? (
+                        <div className="text-center py-20 mx-8 my-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                            <Users className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-slate-900">No users found</h3>
+                            <p className="text-slate-400 font-medium">
+                                {searchTerm
+                                    ? `No users match "${searchTerm}"`
+                                    : "Try adjusting your filters or status selection"}
+                            </p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
@@ -441,8 +450,7 @@ const AdminUsersPage = () => {
                                     <th className="py-4 px-8">Email</th>
                                     <th className="py-4 px-8 text-center">Role</th>
                                     <th className="py-4 px-8 text-center">Registration Date</th>
-                                    <th className="py-4 px-8 text-center">Account Status</th>
-                                    <th className="py-4 px-8 text-right pr-10">Verification</th>
+                                    <th className="py-4 px-8 text-right pr-10">Account Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -455,17 +463,21 @@ const AdminUsersPage = () => {
                                         <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="py-6 px-8">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-slate-50">
-                                                        <img
-                                                            src={user.profilePic || 'https://via.placeholder.com/100'}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
-                                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/100'; }}
-                                                        />
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm">
+                                                        {user.profilePic ? (
+                                                            <img
+                                                                src={user.profilePic}
+                                                                alt={user.name}
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                                            />
+                                                        ) : null}
+                                                        <span className="text-slate-400 font-bold text-xs uppercase">
+                                                            {user.name?.charAt(0) || 'U'}
+                                                        </span>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-slate-900 text-[14px] leading-tight mb-1">{user.name || 'Anonymous User'}</p>
-                                                        {role === 'B2B Manager' && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Institutional Account</p>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -475,34 +487,20 @@ const AdminUsersPage = () => {
                                                 </span>
                                             </td>
                                             <td className="py-6 px-8 text-center">
-                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none inline-block ${role === 'Admin' ? 'bg-slate-100 text-slate-600' :
-                                                    role === 'B2B Manager' ? 'bg-purple-50 text-purple-600' :
-                                                        'bg-blue-50 text-blue-600'
-                                                    }`}>
+                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none inline-block ${role === 'Admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
                                                     {role}
                                                 </span>
                                             </td>
                                             <td className="py-6 px-8 text-center text-[13px] font-bold text-slate-500">
                                                 {user.createdAt ? (user.createdAt.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : new Date(user.createdAt).toLocaleDateString()) : 'Oct 12, 2023'}
                                             </td>
-                                            <td className="py-6 px-8 text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${accStatus === 'Active' ? 'bg-emerald-500' :
-                                                        accStatus === 'Suspended' ? 'bg-red-500' :
-                                                            'bg-orange-400'
-                                                        }`} />
-                                                    <span className="text-[13px] font-bold text-slate-700">{accStatus}</span>
-                                                </div>
-                                            </td>
                                             <td className="py-6 px-8 text-right pr-10">
-                                                <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${vStatus === 'VERIFIED' ? 'bg-blue-50 text-blue-600' :
-                                                    vStatus === 'TAX PENDING' ? 'bg-orange-50 text-orange-600' :
-                                                        'bg-slate-50 text-slate-400'
+                                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${accStatus === 'Active'
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    : 'bg-red-50 text-red-600 border-red-100'
                                                     }`}>
-                                                    {vStatus === 'VERIFIED' && <CheckCircle className="w-3.5 h-3.5 fill-blue-600 text-white" />}
-                                                    {vStatus === 'TAX PENDING' && <div className="w-4 h-4 rounded-full bg-orange-600 flex items-center justify-center text-[10px] text-white">!</div>}
-                                                    {vStatus === 'NO DOCS' && <UserX className="w-3.5 h-3.5 text-slate-400" />}
-                                                    {vStatus}
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${accStatus === 'Active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                                    {accStatus}
                                                 </div>
                                             </td>
                                         </tr>
@@ -582,7 +580,7 @@ const AdminUsersPage = () => {
                                 <h3 className="text-2xl font-bold text-gray-900">{selectedUser.name || "Anonymous"}</h3>
                                 <div className="flex gap-2 mt-1">
                                     <Badge variant={selectedUser.isBanned ? "danger" : "success"}>
-                                        {selectedUser.isBanned ? "Banned" : "Active Account"}
+                                        {selectedUser.role} Account
                                     </Badge>
                                 </div>
                             </div>

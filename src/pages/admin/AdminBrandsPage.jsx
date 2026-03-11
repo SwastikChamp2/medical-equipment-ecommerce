@@ -47,13 +47,43 @@ const AdminBrandsPage = () => {
     const fetchBrands = async () => {
         setLoading(true);
         try {
+            // Fetch brands
             const snapshot = await getDocs(collection(db, "brands"));
             const brandsList = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
                 docID: doc.id // Ensure docID is consistent
             }));
-            setBrands(brandsList);
+
+            // Fetch products to count occurrences
+            const productsSnapshot = await getDocs(collection(db, "products"));
+            const productCounts = {};
+            productsSnapshot.docs.forEach(doc => {
+                const product = doc.data();
+                if (product.brand) {
+                    const rawBrand = product.brand.toLowerCase().trim();
+                    const brandSlug = rawBrand.replace(/\s+/g, '-');
+                    
+                    productCounts[brandSlug] = (productCounts[brandSlug] || 0) + 1;
+                    productCounts[rawBrand] = (productCounts[rawBrand] || 0) + 1;
+                }
+            });
+
+            // Map counts to brands
+            const brandsWithCounts = brandsList.map(brand => {
+                const docIdKey = (brand.docID || '').toLowerCase().trim();
+                const labelKey = (brand.label || '').toLowerCase().trim();
+                
+                const countBySlug = productCounts[docIdKey] || 0;
+                const countByLabel = productCounts[labelKey] || 0;
+
+                return {
+                    ...brand,
+                    productCount: Math.max(countBySlug, countByLabel)
+                };
+            });
+
+            setBrands(brandsWithCounts);
         } catch (err) {
             console.error("Error fetching brands:", err);
             toast.error("Failed to fetch brands");
@@ -112,7 +142,7 @@ const AdminBrandsPage = () => {
             fetchBrands();
         } catch (error) {
             console.error("Error saving brand:", error);
-            toast.error("Failed to save brand");
+            toast.error(error.message || "Failed to save brand");
         } finally {
             setIsSaving(false);
         }
@@ -232,7 +262,7 @@ const AdminBrandsPage = () => {
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-gray-900 text-sm truncate">{brand.label}</h4>
                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
-                                            {Math.floor(Math.random() * 2000 + 100).toLocaleString()} Products
+                                            {brand.productCount?.toLocaleString() || 0} Products
                                         </p>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-600 transition-colors" />

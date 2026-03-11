@@ -13,23 +13,63 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import StepIndicator from '../components/StepIndicator';
 import Button from '../components/Button';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/formatUtils';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { createOrder } from '../services/orderService';
 
 const steps = ['Shipping', 'Payment', 'Review', 'Confirmation'];
 
 export default function CheckoutPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('credit-card');
-  const { cartItems, subtotal } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { cartItems, subtotal, clearCart } = useCart();
 
-    const shippingCost = shippingMethod === 'express' ? 29.99 : shippingMethod === 'white-glove' ? 149.99 : 0;
+  const shippingCost = shippingMethod === 'express' ? 29.99 : shippingMethod === 'white-glove' ? 149.99 : 0;
   const tax = subtotal * 0.085;
   const total = subtotal + shippingCost + tax;
 
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const orderData = {
+        userId: user ? user.uid : 'guest',
+        items: cartItems,
+        subtotal,
+        shippingCost,
+        tax,
+        total,
+        shippingMethod,
+        paymentMethod,
+        status: 'Placed',
+      };
+
+      await createOrder(orderData);
+      clearCart();
+      toast.success('Order placed successfully!');
+      navigate(user ? '/my-orders' : '/');
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const shippingMethods = [
     { id: 'standard', label: 'Standard Shipping', desc: '5-7 business days', price: 'FREE', icon: Truck },
-    { id: 'express', label: 'Express Shipping', desc: '2-3 business days', price: '$29.99', icon: Zap },
-    { id: 'white-glove', label: 'White Glove Delivery', desc: 'Installation included', price: '$149.99', icon: Crown },
+    { id: 'express', label: 'Express Shipping', desc: '2-3 business days', price: formatCurrency(500), icon: Zap },
+    { id: 'white-glove', label: 'White Glove Delivery', desc: 'Installation included', price: formatCurrency(2000), icon: Crown },
   ];
 
   const paymentMethods = [
@@ -87,11 +127,10 @@ export default function CheckoutPage() {
               {shippingMethods.map((method) => (
                 <label
                   key={method.id}
-                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    shippingMethod === method.id
+                  className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${shippingMethod === method.id
                       ? 'border-primary bg-primary-light'
                       : 'border-border hover:border-gray-300'
-                  }`}
+                    }`}
                 >
                   <input
                     type="radio"
@@ -101,9 +140,8 @@ export default function CheckoutPage() {
                     onChange={(e) => setShippingMethod(e.target.value)}
                     className="accent-primary"
                   />
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    shippingMethod === method.id ? 'bg-primary text-white' : 'bg-gray-100 text-text-secondary'
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${shippingMethod === method.id ? 'bg-primary text-white' : 'bg-gray-100 text-text-secondary'
+                    }`}>
                     <method.icon size={18} />
                   </div>
                   <div className="flex-1">
@@ -134,9 +172,10 @@ export default function CheckoutPage() {
             size="lg"
             className="w-full"
             icon={Lock}
-            onClick={() => setCurrentStep(Math.min(3, currentStep + 1))}
+            onClick={handleCheckout}
+            disabled={isSubmitting || cartItems.length === 0}
           >
-            Complete Order — ${total.toFixed(2)}
+            {isSubmitting ? 'Processing...' : `Complete Order — ${formatCurrency(total)}`}
           </Button>
         </div>
 
@@ -155,7 +194,7 @@ export default function CheckoutPage() {
                       <p className="text-sm font-medium text-text-primary truncate">{item.name}</p>
                       <p className="text-xs text-text-secondary">Qty: {item.quantity}</p>
                     </div>
-                    <p className="text-sm font-semibold">${(item.price * item.quantity).toLocaleString()}</p>
+                    <p className="text-sm font-semibold">{formatCurrency(item.price * item.quantity)}</p>
                   </div>
                 ))
               )}
@@ -163,21 +202,21 @@ export default function CheckoutPage() {
             <div className="border-t border-border pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">Subtotal</span>
-                <span>${subtotal.toLocaleString()}</span>
+                <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Shipping</span>
                 <span className={shippingCost === 0 ? 'text-green-600 font-medium' : ''}>
-                  {shippingCost === 0 ? 'FREE' : `$${shippingCost}`}
+                  {shippingCost === 0 ? 'FREE' : formatCurrency(shippingCost)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Tax (8.5%)</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>{formatCurrency(tax)}</span>
               </div>
               <div className="flex justify-between pt-3 border-t border-border text-lg font-bold">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatCurrency(total)}</span>
               </div>
             </div>
           </div>

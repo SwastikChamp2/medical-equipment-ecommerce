@@ -8,13 +8,15 @@ import { db } from "../../firebase";
 import { formatCurrency } from "../../utils/formatUtils";
 import {
     LayoutDashboard, Users, ShoppingBag, Layers, Image as ImageIcon,
-    Bell, TrendingUp, ShoppingCart, Menu,
+    Bell, ShoppingCart, Menu,
     Search, Settings, UserPlus,
     FileText, Ticket, Megaphone, ChevronDown, MoreHorizontal,
     Banknote, ShieldCheck, Box
 } from "lucide-react";
 import { Card, LoadingSpinner, Badge } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
+import DashboardSidebar from "../../components/DashboardSidebar";
+import AdminLoginPage from "./AdminLoginPage";
 
 // Recharts imports for ESM compatibility
 import {
@@ -30,7 +32,7 @@ const Charts = {
 /**
  * Animated Stat Card Component
  */
-const StatCard = ({ title, value, icon: Icon, trend, loading, subtext = "vs last month" }) => {
+const StatCard = ({ title, value, icon: Icon, loading }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -39,24 +41,15 @@ const StatCard = ({ title, value, icon: Icon, trend, loading, subtext = "vs last
         >
             <div className="flex-1 min-w-0">
                 <p className="text-gray-400 text-sm font-medium mb-4">{title}</p>
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
                     {loading ? (
                         <div className="h-8 w-24 bg-gray-200 animate-pulse rounded" />
-                    ) : (
+                    ) : value !== undefined && value !== null ? (
                         <h3 className="text-2xl xl:text-3xl font-bold text-gray-900">{value}</h3>
-                    )}
-                    {trend && (
-                        <div className={`flex items-center text-sm font-semibold whitespace-nowrap ${trend.includes('-') ? 'text-red-500' : 'text-green-500'}`}>
-                            {trend.includes('-') ? (
-                                <TrendingUp className="w-4 h-4 mr-1 rotate-180" />
-                            ) : (
-                                <TrendingUp className="w-4 h-4 mr-1" />
-                            )}
-                            {trend.replace('-', '')}
-                        </div>
+                    ) : (
+                        <h3 className="text-xl font-bold text-gray-400">N/A</h3>
                     )}
                 </div>
-                <p className="text-xs text-gray-400 mt-2">{subtext}</p>
             </div>
             <div className="bg-blue-50 p-2.5 rounded-xl shrink-0 ml-4">
                 <Icon className="w-5 h-5 text-blue-600" />
@@ -107,8 +100,8 @@ const AdminDashboard = () => {
                     fetchUserStatistics()
                 ]);
             } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-                toast.error("Failed to load dashboard data");
+                console.error("Critical error loading dashboard:", error);
+                toast.error("Dashboard failed to load completely. Some data may be missing.");
             } finally {
                 setLoading(false);
             }
@@ -146,21 +139,12 @@ const AdminDashboard = () => {
                     monthlyRev += orderTotal;
                 }
 
-                return { id: doc.id, ...data };
+                return { id: doc.id, orderDateObj: orderDate || new Date(0), ...data };
             });
 
-            // Recent Orders
-            const recentOrdersQuery = query(
-                collection(db, "orders"),
-                orderBy("orderDate", "desc"),
-                limit(5)
-            );
-            const recentSnapshot = await getDocs(recentOrdersQuery).catch(() => getDocs(collection(db, "orders"))); // Fallback if no orderDate index
-
-            const recentOrders = recentSnapshot.docs.slice(0, 5).map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            // Recent Orders (sort in-memory to bypass Firestore missing index errors)
+            const sortedOrders = [...orders].sort((a, b) => b.orderDateObj - a.orderDateObj);
+            const recentOrders = sortedOrders.slice(0, 5);
 
             setOrderStats({
                 totalOrders: orders.length,
@@ -359,35 +343,29 @@ const AdminDashboard = () => {
                 <p className="text-gray-500">Welcome back, here's what's happening today across your medical store.</p>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Total Revenue"
                     value={formatCurrency(orderStats.totalRevenue)}
                     icon={Banknote}
-                    trend="12.5%"
                     loading={loading}
                 />
                 <StatCard
                     title="Total Orders"
                     value={orderStats.totalOrders.toLocaleString()}
                     icon={ShoppingBag}
-                    trend="8.2%"
                     loading={loading}
                 />
                 <StatCard
                     title="New Users"
                     value={userStats.totalUsers.toLocaleString()}
                     icon={UserPlus}
-                    trend="5.4%"
                     loading={loading}
                 />
                 <StatCard
                     title="Pending Quotes"
                     value="12"
                     icon={FileText}
-                    trend="-2.1%"
-                    subtext="Immediate action required"
                     loading={loading}
                 />
             </div>
@@ -552,7 +530,7 @@ const AdminDashboard = () => {
                                                 </Badge>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Oct 24, 2023'}
+                                                {order.orderDateObj ? order.orderDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-gray-400">
                                                 <button className="hover:text-gray-600">
@@ -563,7 +541,13 @@ const AdminDashboard = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-10 text-center text-gray-500">No recent orders</td>
+                                        <td colSpan="7" className="px-6 py-16 text-center">
+                                            <div className="flex flex-col items-center justify-center text-gray-400">
+                                                <ShoppingBag className="w-12 h-12 mb-3 opacity-20" />
+                                                <p className="font-bold text-lg">No orders found</p>
+                                                <p className="text-sm">You haven't received any orders yet.</p>
+                                            </div>
+                                        </td>
                                     </tr>
                                 )}
                             </tbody>
@@ -574,9 +558,6 @@ const AdminDashboard = () => {
         </motion.div>
     );
 };
-
-import DashboardSidebar from "../../components/DashboardSidebar";
-
 /**
  * Admin Home Layout Component with Sidebar
  */
@@ -585,13 +566,40 @@ const AdminPage = () => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const { signOut } = useAuth();
+    const { user, signOut, loading } = useAuth();
+
+    // Admin Session Verification
+    const [isAdminVerified, setIsAdminVerified] = useState(
+        sessionStorage.getItem("admin_verified") === "true"
+    );
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#f8fbff] flex items-center justify-center">
+                <LoadingSpinner size="xl" text="Verifying session..." />
+            </div>
+        );
+    }
 
     const handleLogout = async () => {
+        sessionStorage.removeItem("admin_verified");
         await signOut();
         toast.success("Logged out successfully!");
         navigate("/signin");
     };
+
+    const handleAdminVerify = (status) => {
+        setIsAdminVerified(status);
+        if (status) {
+            toast.success("Identity verified. Welcome to Admin Panel.");
+        }
+    };
+
+    // If not verified, show the dedicated admin login
+    if (!isAdminVerified) {
+        return <AdminLoginPage onVerify={handleAdminVerify} />;
+    }
+
 
     const menuItems = [
         { path: "/admin", icon: LayoutDashboard, label: "Dashboard" },
@@ -601,8 +609,8 @@ const AdminPage = () => {
         { path: "/admin/categories", icon: Layers, label: "Categories" },
         { path: "/admin/users", icon: Users, label: "Users" },
         { path: "/admin/coupons", icon: Ticket, label: "Coupons" },
-        { path: "/admin/banners", icon: ImageIcon, label: "Banners" },
-        { path: "/admin/announcements", icon: Megaphone, label: "Announcements" },
+        // { path: "/admin/banners", icon: ImageIcon, label: "Banners" },
+        // { path: "/admin/announcements", icon: Megaphone, label: "Announcements" },
     ];
 
     const isDashboardRoot = location.pathname === '/admin';

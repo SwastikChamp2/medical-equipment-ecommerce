@@ -40,7 +40,7 @@ const AdminBannersPage = () => {
         { id: 2, title: 'FDA Approval Announcement: SmartMonitor X1', displays: 'Bottom Sticky', priority: 'Medium', status: 'Scheduled (Oct 1)', color: 'blue' }
     ]);
     const [quickEditor, setQuickEditor] = useState({
-        message: '✨ Free shipping on orders over $5,000. Use code SAVE5K at checkout.',
+        message: '✨ Free shipping on orders over ₹5,000. Use code SAVE5K at checkout.',
         bgColor: 'Dark Slate'
     });
 

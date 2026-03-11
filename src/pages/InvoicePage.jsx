@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ShoppingBag, RefreshCw, Settings, DollarSign, FileText, AlertTriangle, Clock, Search, Download, Eye, Loader2 } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, RefreshCw, Settings, IndianRupee, FileText, AlertTriangle, Clock, Search, Download, Eye, Loader2 } from 'lucide-react';
 import { DashboardHeader } from '../components/Header';
 import DashboardSidebar from '../components/DashboardSidebar';
 import KPICard from '../components/KPICard';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { getAllOrders } from '../services/orderService';
+import { formatCurrency } from '../utils/formatUtils';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'My Account', path: '/profile' },
@@ -56,7 +57,7 @@ export default function InvoicePage() {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                <KPICard icon={DollarSign} label="Outstanding Balance" value={`$${outstanding.toLocaleString()}`} color="primary" trend="up" trendValue="12%" />
+                <KPICard icon={IndianRupee} label="Outstanding Balance" value={formatCurrency(outstanding)} color="primary" trend="up" trendValue="12%" />
                 <KPICard icon={FileText} label="Total Invoices" value={invoices.length} color="primary" />
                 <KPICard icon={AlertTriangle} label="Overdue" value={overdue} color="danger" />
                 <KPICard icon={Clock} label="Avg. Payment Time" value="18 days" color="success" trend="down" trendValue="3 days" />
@@ -99,7 +100,7 @@ export default function InvoicePage() {
                           <td className="px-5 py-4 text-text-primary">{inv.customer || '—'}</td>
                           <td className="px-5 py-4 text-text-secondary">{inv.date}</td>
                           <td className="px-5 py-4 text-text-secondary">{inv.dueDate || '—'}</td>
-                          <td className="px-5 py-4 text-right font-semibold">${(inv.amount || inv.total || 0).toLocaleString()}</td>
+                          <td className="px-5 py-4 text-right font-semibold">{formatCurrency(inv.amount || inv.total || 0)}</td>
                           <td className="px-5 py-4 text-center"><StatusBadge status={inv.status} /></td>
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-center gap-2">

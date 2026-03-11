@@ -10,28 +10,39 @@ import {
   LogOut,
   Package,
   LayoutDashboard,
+  Box,
 } from 'lucide-react';
 import Button from './Button';
 import { navLinks } from '../data/mockData';
 import { getCategories } from '../services/categoryService';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../context/CartContext';
 
-export function PublicHeader({ cartCount = 0 }) {
+export function PublicHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([
+    { id: 'cat1', name: 'Medicines', label: 'Medicines' },
+    { id: 'cat2', name: 'Diagnostics', label: 'Diagnostics' },
+    { id: 'cat3', name: 'First Aid', label: 'First Aid' },
+    { id: 'cat4', name: 'Personal Care', label: 'Personal Care' }
+  ]);
   const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, signOut } = useAuth();
-  const { count: wishlistCount } = useWishlist();
+  const { items: wishlistItems } = useWishlist();
+  const { cartCount } = useCart();
+  const wishlistCount = wishlistItems?.length || 0;
 
   useEffect(() => {
     getCategories()
-      .then(setCategories)
+      .then(cats => {
+        if (cats && cats.length > 0) setCategories(cats);
+      })
       .catch((err) => console.error('Error fetching categories:', err));
   }, []);
 
@@ -55,7 +66,7 @@ export function PublicHeader({ cartCount = 0 }) {
       {/* Top bar */}
       <div className="bg-primary text-white text-xs py-1.5">
         <div className="container-main flex justify-between items-center">
-          <span>✨ Free shipping on orders over $35 • Easy 30-day returns</span>
+          <span>✨ Free shipping on orders over ₹500 • Easy 30-day returns</span>
           <div className="flex items-center gap-4">
             <a href="tel:+91-9818267167" className="hover:underline">+91 9818267167</a>
           </div>
@@ -90,29 +101,47 @@ export function PublicHeader({ cartCount = 0 }) {
                       <ChevronDown size={14} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {dropdownOpen && (
-                      <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-border rounded-xl shadow-lg py-2 animate-fade-in z-50">
-                        {categories.map((cat) => (
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-border rounded-2xl shadow-xl py-3 animate-fade-in z-50 overflow-hidden ring-4 ring-black/5">
+                        <div className="px-4 py-2 mb-1 border-b border-gray-50 flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shop by Category</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                        </div>
+                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                          {categories.map((cat) => (
+                            <Link
+                              key={cat.id}
+                              to={`/products?category=${encodeURIComponent(cat.label || cat.name)}`}
+                              className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/50 transition-all group mx-2 rounded-xl"
+                              onClick={() => setDropdownOpen(false)}
+                            >
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center text-text-secondary group-hover:bg-white group-hover:shadow-sm transition-all overflow-hidden border border-transparent group-hover:border-primary/10">
+                                {cat.image ? (
+                                  <img
+                                    src={cat.image}
+                                    alt=""
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                  />
+                                ) : (
+                                  <Box size={20} className="text-primary/60 group-hover:text-primary transition-colors" />
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold group-hover:translate-x-0.5 transition-transform">{cat.label || cat.name}</span>
+                                <span className="text-[10px] text-slate-400 font-medium">Explore Products</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-gray-50 px-2 text-center">
                           <Link
-                            key={cat.id}
-                            to={`/products?category=${encodeURIComponent(cat.label || cat.name)}`}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-primary hover:bg-gray-50 transition-colors"
+                            to="/products"
+                            className="block py-2 text-xs font-bold text-primary hover:bg-primary-light rounded-xl transition-colors"
                             onClick={() => setDropdownOpen(false)}
                           >
-                            {cat.image ? (
-                              <img
-                                src={cat.image}
-                                alt=""
-                                onError={(e) => { e.target.style.display = 'none'; }}
-                                className="w-8 h-8 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg bg-primary-light flex items-center justify-center text-primary font-bold text-xs">
-                                <Box size={24} />
-                              </div>
-                            )}
-                            <span className="font-medium">{cat.label || cat.name}</span>
+                            View All Categories
                           </Link>
-                        ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -141,9 +170,7 @@ export function PublicHeader({ cartCount = 0 }) {
             >
               <Heart size={20} />
               {wishlistCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {wishlistCount}
-                </span>
+                <span className="absolute top-1 right-1 w-3 h-3 bg-red-600 border-2 border-white rounded-full z-10 shadow-sm animate-fade-in"></span>
               )}
             </Link>
             <Link
@@ -152,9 +179,7 @@ export function PublicHeader({ cartCount = 0 }) {
             >
               <ShoppingCart size={20} />
               {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-danger text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {cartCount}
-                </span>
+                <span className="absolute top-1 right-1 w-3 h-3 bg-red-600 border-2 border-white rounded-full z-10 shadow-sm animate-fade-in"></span>
               )}
             </Link>
 
@@ -175,7 +200,7 @@ export function PublicHeader({ cartCount = 0 }) {
                 </button>
                 {userMenuOpen && (
                   <div className="absolute top-full right-0 mt-1 w-48 bg-white border border-border rounded-xl shadow-lg py-2 animate-fade-in z-50">
-                    {user?.role === 'admin' && (
+                    {(user?.role === 'admin' || user?.role === 'Admin') && (
                       <Link
                         to="/admin"
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-primary font-bold hover:bg-primary-light transition-colors"
@@ -235,7 +260,7 @@ export function PublicHeader({ cartCount = 0 }) {
       {mobileOpen && (
         <div className="lg:hidden border-t border-border bg-white animate-fade-in">
           <div className="container-main py-4 space-y-1">
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'Admin') && (
               <Link
                 to="/admin"
                 className="block px-4 py-2.5 rounded-lg text-sm font-bold text-primary hover:bg-primary-light"

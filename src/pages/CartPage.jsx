@@ -4,6 +4,7 @@ import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag } from 'lucide-react'
 import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../utils/formatUtils';
 
 export default function CartPage() {
   const { cartItems: items, updateQuantity: contextUpdateQty, removeFromCart, subtotal, loading } = useCart();
@@ -84,7 +85,7 @@ export default function CartPage() {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center border border-border rounded-lg">
                     <button
-                      onClick={() => updateQty(item.id, -1)}
+                      onClick={() => updateQuantity(item.id, -1)}
                       className="p-2 hover:bg-gray-50 transition-colors"
                     >
                       <Minus size={14} />
@@ -93,14 +94,14 @@ export default function CartPage() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => updateQty(item.id, 1)}
+                      onClick={() => updateQuantity(item.id, 1)}
                       className="p-2 hover:bg-gray-50 transition-colors"
                     >
                       <Plus size={14} />
                     </button>
                   </div>
                   <p className="text-lg font-bold text-text-primary">
-                    ${(item.price * item.quantity).toLocaleString()}
+                    {formatCurrency(item.price * item.quantity)}
                   </p>
                 </div>
               </div>
@@ -122,17 +123,17 @@ export default function CartPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">Subtotal</span>
-                <span className="font-medium">${subtotal.toLocaleString()}</span>
+                <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Shipping</span>
                 <span className={`font-medium ${shipping === 0 ? 'text-green-600' : ''}`}>
-                  {shipping === 0 ? 'FREE' : `$${shipping}`}
+                  {shipping === 0 ? 'FREE' : formatCurrency(shipping)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Tax (8.5%)</span>
-                <span className="font-medium">${tax.toFixed(2)}</span>
+                <span className="font-medium">{formatCurrency(tax)}</span>
               </div>
             </div>
 
@@ -159,7 +160,7 @@ export default function CartPage() {
               <div className="flex justify-between mb-5">
                 <span className="text-lg font-bold text-text-primary">Total</span>
                 <span className="text-lg font-bold text-text-primary">
-                  ${total.toFixed(2)}
+                  {formatCurrency(total)}
                 </span>
               </div>
               <Button variant="primary" size="lg" className="w-full" href="/checkout" iconRight={ArrowRight}>

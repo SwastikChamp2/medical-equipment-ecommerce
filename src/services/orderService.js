@@ -1,7 +1,15 @@
-import { collection, getDocs, doc, getDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const COLLECTION = 'orders';
+
+export async function createOrder(orderData) {
+  const docRef = await addDoc(collection(db, COLLECTION), {
+    ...orderData,
+    createdAt: new Date().toISOString(),
+  });
+  return docRef.id;
+}
 
 export async function getOrders(userId) {
   if (!userId) return [];

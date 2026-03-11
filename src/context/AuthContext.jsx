@@ -73,6 +73,7 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     await firebaseSignOut(auth);
+    sessionStorage.removeItem("admin_verified");
     setUser(null);
   };
 

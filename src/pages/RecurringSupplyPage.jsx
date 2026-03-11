@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   RefreshCw,
-  DollarSign,
+  IndianRupee,
   Calendar,
   Pause,
   Play,
@@ -23,6 +23,7 @@ import KPICard from '../components/KPICard';
 import StatusBadge from '../components/StatusBadge';
 import Button from '../components/Button';
 import { getProducts } from '../services/productService';
+import { formatCurrency } from '../utils/formatUtils';
 
 export default function RecurringSupplyPage() {
   const [subs, setSubs] = useState([]);
@@ -130,9 +131,9 @@ export default function RecurringSupplyPage() {
             color="primary"
           />
           <KPICard
-            icon={DollarSign}
+            icon={IndianRupee}
             label="Monthly Spend"
-            value={`$${monthlySpend.toFixed(2)}`}
+            value={formatCurrency(monthlySpend)}
             color="warning"
           />
         </div>
@@ -167,11 +168,10 @@ export default function RecurringSupplyPage() {
                 <div
                   key={sub.id}
                   onClick={() => setSelectedId(sub.id)}
-                  className={`bg-white rounded-xl border-2 p-5 flex gap-4 cursor-pointer transition-all hover:shadow-sm ${
-                    selectedId === sub.id
+                  className={`bg-white rounded-xl border-2 p-5 flex gap-4 cursor-pointer transition-all hover:shadow-sm ${selectedId === sub.id
                       ? 'border-primary shadow-sm'
                       : 'border-border'
-                  }`}
+                    }`}
                 >
                   <img
                     src={sub.image}
@@ -193,7 +193,7 @@ export default function RecurringSupplyPage() {
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-text-primary">
-                          ${sub.price}/unit
+                          {formatCurrency(sub.price)}/unit
                         </p>
                         <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
                           SAVE 15%
@@ -269,7 +269,7 @@ export default function RecurringSupplyPage() {
                         {product.name}
                       </p>
                       <p className="text-sm font-bold text-primary mt-1">
-                        ${product.price}
+                        {formatCurrency(product.price)}
                       </p>
                       <Button
                         variant="secondary"
@@ -299,8 +299,7 @@ export default function RecurringSupplyPage() {
                       {selected.name}
                     </p>
                     <p className="text-xs text-text-secondary mt-1">
-                      ${selected.price} × {selected.quantity} = $
-                      {(selected.price * selected.quantity).toFixed(2)}/
+                      {formatCurrency(selected.price)} × {selected.quantity} = {formatCurrency(selected.price * selected.quantity)}/
                       {selected.frequency.toLowerCase()}
                     </p>
                   </div>
@@ -354,9 +353,8 @@ export default function RecurringSupplyPage() {
                             className="flex items-center gap-2 text-sm"
                           >
                             <div
-                              className={`w-2 h-2 rounded-full ${
-                                i === 0 ? 'bg-primary' : 'bg-gray-300'
-                              }`}
+                              className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary' : 'bg-gray-300'
+                                }`}
                             />
                             <span
                               className={

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { getOrders } from '../services/orderService';
 import StatusBadge from '../components/StatusBadge';
+import { formatCurrency } from '../utils/formatUtils';
 
 const tabs = [
   { id: 'profile', label: 'My Profile', icon: User },
@@ -60,7 +61,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <nav className="space-y-1">
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'Admin') && (
               <Link
                 to="/admin"
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-primary bg-primary-light hover:bg-primary/10 transition-colors mb-2"
@@ -191,7 +192,7 @@ export default function ProfilePage() {
                           <p className="text-xs text-text-secondary mt-0.5">{order.date} • {(order.items || []).length} item(s)</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <p className="text-sm font-bold text-text-primary">${(order.total || 0).toFixed(2)}</p>
+                          <p className="text-sm font-bold text-text-primary">{formatCurrency(order.total || 0)}</p>
                           <StatusBadge status={order.status} />
                           <ChevronRight size={16} className="text-text-secondary group-hover:text-primary" />
                         </div>
@@ -221,7 +222,7 @@ export default function ProfilePage() {
                       <img src={product.image} alt={product.name} className="w-16 h-16 rounded-lg object-cover" />
                       <div className="flex-1 min-w-0">
                         <Link to={`/product/${product.id}`} className="text-sm font-semibold text-text-primary hover:text-primary line-clamp-1">{product.name}</Link>
-                        <p className="text-sm font-bold text-primary mt-1">${product.price}</p>
+                        <p className="text-sm font-bold text-primary mt-1">{formatCurrency(product.price)}</p>
                       </div>
                       <button onClick={() => removeItem(product.id)} className="p-2 self-start rounded-lg text-text-secondary hover:text-danger hover:bg-red-50 transition-colors">
                         <Trash2 size={14} />

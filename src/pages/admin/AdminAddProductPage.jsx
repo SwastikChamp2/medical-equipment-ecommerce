@@ -4,11 +4,12 @@ import { db } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-    Package, DollarSign, Image as ImageIcon, Tag, Info, Check,
+    Package, IndianRupee, Image as ImageIcon, Tag, Info, Check,
     X, Plus, Trash2, Globe, Shield
 } from "lucide-react";
 import { Button, Card, Input, Alert, Badge } from "../../components/ui";
 import { toast } from "react-toastify";
+import { formatCurrency } from "../../utils/formatUtils";
 
 /**
  * Enhanced Add Product Page with Modern UI
@@ -79,7 +80,7 @@ const AdminAddProductPage = () => {
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: Package },
-        { id: 'pricing', label: 'Pricing', icon: DollarSign },
+        { id: 'pricing', label: 'Pricing', icon: IndianRupee },
         { id: 'images', label: 'Images', icon: ImageIcon },
         { id: 'details', label: 'Details', icon: Info },
         { id: 'warranty', label: 'Warranty', icon: Shield }
@@ -445,9 +446,14 @@ const AdminAddProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-end">
-                        <Button onClick={() => setActiveTab('pricing')} icon={<DollarSign className="w-4 h-4" />} iconPosition="right">
-                            Next: Pricing
+                    <div className="flex justify-end pt-4 border-t">
+                        <Button
+                            onClick={handleAddProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Publishing...' : 'Publish Product'}
                         </Button>
                     </div>
                 </motion.div>
@@ -460,7 +466,7 @@ const AdminAddProductPage = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="space-y-6"
                 >
-                    <Card title="Pricing Information" icon={<DollarSign className="w-5 h-5 text-green-600" />}>
+                    <Card title="Pricing Information" icon={<IndianRupee className="w-5 h-5 text-green-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Input
                                 label="MRP (Maximum Retail Price)"
@@ -468,7 +474,7 @@ const AdminAddProductPage = () => {
                                 placeholder="₹ 0.00"
                                 value={newProduct.mrp}
                                 onChange={(e) => setNewProduct({ ...newProduct, mrp: e.target.value })}
-                                icon={<DollarSign className="w-4 h-4" />}
+                                icon={<IndianRupee className="w-4 h-4" />}
                             />
 
                             <Input
@@ -481,7 +487,7 @@ const AdminAddProductPage = () => {
                                     sellingPrice: e.target.value,
                                     price: e.target.value
                                 })}
-                                icon={<DollarSign className="w-4 h-4" />}
+                                icon={<IndianRupee className="w-4 h-4" />}
                                 error={errors.sellingPrice}
                                 required
                             />
@@ -498,12 +504,17 @@ const AdminAddProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('basic')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('images')} icon={<ImageIcon className="w-4 h-4" />} iconPosition="right">
-                            Next: Images
+                        <Button
+                            onClick={handleAddProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Publishing...' : 'Publish Product'}
                         </Button>
                     </div>
                 </motion.div>
@@ -563,12 +574,17 @@ const AdminAddProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('pricing')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('details')} icon={<Info className="w-4 h-4" />} iconPosition="right">
-                            Next: Details
+                        <Button
+                            onClick={handleAddProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Publishing...' : 'Publish Product'}
                         </Button>
                     </div>
                 </motion.div>
@@ -721,12 +737,17 @@ const AdminAddProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('images')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('warranty')} icon={<Shield className="w-4 h-4" />} iconPosition="right">
-                            Next: Warranty
+                        <Button
+                            onClick={handleAddProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Publishing...' : 'Publish Product'}
                         </Button>
                     </div>
                 </motion.div>

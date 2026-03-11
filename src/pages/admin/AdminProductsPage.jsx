@@ -9,8 +9,8 @@ import {
     RefreshCw, BarChart2, Archive, Pencil
 } from "lucide-react";
 import { Button, Card, Input, Modal, Badge, Alert, LoadingSpinner } from "../../components/ui";
-import { toast } from "react-toastify";
 import { formatCurrency } from "../../utils/formatUtils";
+
 
 /**
  * WORLD-CLASS Product Manager with Professional Features
@@ -79,30 +79,36 @@ const AdminProductsPage = () => {
                 ...doc.data()
             }));
 
-            // Fetch orders to calculate performance
-            const ordersCol = collection(db, "orders");
-            const ordersSnapshot = await getDocs(ordersCol);
+            // Fetch orders to calculate performance (optional, might fail if rules are strict)
+            let salesData = {};
+            try {
+                const ordersCol = collection(db, "orders");
+                const ordersSnapshot = await getDocs(ordersCol);
 
-            // Calculate sales per product
-            const salesData = {};
-            ordersSnapshot.docs.forEach(orderDoc => {
-                const order = orderDoc.data();
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
-                        const productId = item.productId || item.id;
-                        if (!salesData[productId]) {
-                            salesData[productId] = {
-                                totalSales: 0,
-                                totalRevenue: 0,
-                                orderCount: 0
-                            };
-                        }
-                        salesData[productId].totalSales += item.quantity || 0;
-                        salesData[productId].totalRevenue += (item.price * item.quantity) || 0;
-                        salesData[productId].orderCount += 1;
-                    });
-                }
-            });
+                // Calculate sales per product
+                ordersSnapshot.docs.forEach(orderDoc => {
+                    const order = orderDoc.data();
+                    if (order.items && Array.isArray(order.items)) {
+                        order.items.forEach(item => {
+                            const productId = item.productId || item.id;
+                            if (!salesData[productId]) {
+                                salesData[productId] = {
+                                    totalSales: 0,
+                                    totalRevenue: 0,
+                                    orderCount: 0
+                                };
+                            }
+                            salesData[productId].totalSales += item.quantity || 0;
+                            salesData[productId].totalRevenue += (item.price * (item.quantity || 1)) || 0;
+                            salesData[productId].orderCount += 1;
+                        });
+                    }
+                });
+                console.log("Successfully fetched performance metrics from orders");
+            } catch (orderError) {
+                console.warn("Failed to fetch orders for performance metrics (likely permissions):", orderError);
+                // Continue without sales data - products will still show
+            }
 
             setOrderData(salesData);
 
@@ -442,14 +448,19 @@ const AdminProductsPage = () => {
                     <p className="text-slate-500 font-medium">Manage your medical equipment inventory, pricing, and availability.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link to="/admin/products/add">
-                        <Button
-                            variant="primary"
-                            className="bg-[#2563eb] hover:bg-blue-700 text-white font-bold px-6 h-[48px] rounded-xl flex items-center gap-2 shadow-xl shadow-blue-200 transition-all active:scale-95 text-sm"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Add New Product
-                        </Button>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold h-11 px-4 rounded-xl transition-all shadow-sm"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        <span className="hidden sm:inline">Refresh Data</span>
+                    </button>
+                    <Link
+                        to="/admin/products/add"
+                        className="flex items-center gap-2 bg-[#1d61f2] hover:bg-blue-700 text-white font-bold h-11 px-5 rounded-xl shadow-lg shadow-blue-100 transition-all border border-blue-600"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Add New</span>
                     </Link>
                 </div>
             </div>
@@ -517,6 +528,16 @@ const AdminProductsPage = () => {
                     {loading ? (
                         <div className="flex justify-center py-20">
                             <LoadingSpinner size="lg" text="Fetching products..." />
+                        </div>
+                    ) : filteredProducts.length === 0 ? (
+                        <div className="text-center py-20 mx-8 my-8 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                            <Archive className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+                            <h3 className="text-xl font-bold text-slate-900">No products found</h3>
+                            <p className="text-slate-400 font-medium">
+                                {searchTerm
+                                    ? `No matches for "${searchTerm}"`
+                                    : "Try adjusting your filters or status selection"}
+                            </p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">

@@ -18,6 +18,7 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import { getProductById, getProducts } from '../services/productService';
+import { formatCurrency } from '../utils/formatUtils';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -96,11 +97,10 @@ export default function ProductDetailPage() {
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
-                className={`rounded-lg overflow-hidden border-2 transition-all ${
-                  selectedImage === i
+                className={`rounded-lg overflow-hidden border-2 transition-all ${selectedImage === i
                     ? 'border-primary shadow-md'
                     : 'border-border hover:border-gray-300'
-                }`}
+                  }`}
               >
                 <img src={img} alt="" className="w-full h-20 object-cover" />
               </button>
@@ -147,15 +147,15 @@ export default function ProductDetailPage() {
           {/* Price */}
           <div className="flex items-baseline gap-3 mb-6">
             <span className="text-3xl font-bold text-text-primary">
-              ${(product.price || 0).toLocaleString()}
+              {formatCurrency(product.price || 0)}
             </span>
             {product.originalPrice && (
               <>
                 <span className="text-lg text-text-secondary line-through">
-                  ${product.originalPrice.toLocaleString()}
+                  {formatCurrency(product.originalPrice)}
                 </span>
                 <span className="px-2 py-0.5 bg-success-light text-green-700 text-xs font-semibold rounded">
-                  Save ${(product.originalPrice - product.price).toLocaleString()}
+                  Save {formatCurrency(product.originalPrice - product.price)}
                 </span>
               </>
             )}
@@ -208,7 +208,7 @@ export default function ProductDetailPage() {
           {/* Features */}
           <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 rounded-xl">
             {[
-              { icon: Truck, label: 'Free Shipping', sub: 'Orders over $500' },
+              { icon: Truck, label: 'Free Shipping', sub: 'Orders over ₹500' },
               { icon: Shield, label: '2-Year Warranty', sub: 'Full coverage' },
               { icon: RotateCcw, label: '30-Day Returns', sub: 'Hassle-free' },
             ].map((feat, i) => (
@@ -229,11 +229,10 @@ export default function ProductDetailPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3.5 text-sm font-medium capitalize transition-colors relative ${
-                activeTab === tab
+              className={`px-6 py-3.5 text-sm font-medium capitalize transition-colors relative ${activeTab === tab
                   ? 'text-primary'
                   : 'text-text-secondary hover:text-text-primary'
-              }`}
+                }`}
             >
               {tab}
               {activeTab === tab && (

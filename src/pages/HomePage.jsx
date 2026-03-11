@@ -120,7 +120,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { icon: Shield, label: 'FDA Cleared', sub: 'Clinically validated' },
-              { icon: Truck, label: 'Free Shipping', sub: 'On orders over $35' },
+              { icon: Truck, label: 'Free Shipping', sub: 'On orders over ₹500' },
               { icon: Headphones, label: 'Expert Support', sub: 'Licensed specialists' },
               { icon: RefreshCw, label: 'Easy Returns', sub: '30-day hassle-free' },
             ].map((item, i) => (

@@ -2,6 +2,7 @@ import { useAuth } from './context/AuthContext';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { CartProvider } from './context/CartContext';
 import { PublicHeader } from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
 import Footer from './components/Footer';
@@ -28,6 +29,7 @@ import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminCouponsPage from './pages/admin/AdminCouponsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage';
+import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
 
 const dashboardRoutes = [
   '/invoices',
@@ -39,8 +41,8 @@ const dashboardRoutes = [
   '/admin/brands',
   '/admin/categories',
   '/admin/coupons',
-  '/admin/banners',
-  '/admin/announcements'
+  // '/admin/banners',
+  // '/admin/announcements'
 ];
 
 function AppLayout() {
@@ -51,9 +53,10 @@ function AppLayout() {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div></div>;
   }
 
-  // Check if current path starts with /admin/products/edit/
+  // Check if current path is a sub-route of admin sections that have dynamic IDs
   const isDashboard = dashboardRoutes.some(path => location.pathname === path) ||
-    location.pathname.startsWith('/admin/products/edit/');
+    location.pathname.startsWith('/admin/products/edit/') ||
+    location.pathname.startsWith('/admin/orders/');
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -76,6 +79,7 @@ function AppLayout() {
           <Route path="/admin" element={<AdminPage />}>
             <Route index element={<div />} /> {/* Root handled by AdminPage's internal logic */}
             <Route path="orders" element={<AdminOrdersPage />} />
+            <Route path="orders/:id" element={<AdminOrderDetailPage />} />
             <Route path="products" element={<AdminProductsPage />} />
             <Route path="products/add" element={<AdminAddProductPage />} />
             <Route path="products/edit/:id" element={<AdminEditProductPage />} />
@@ -83,8 +87,8 @@ function AppLayout() {
             <Route path="brands" element={<AdminBrandsPage />} />
             <Route path="categories" element={<AdminCategoriesPage />} />
             <Route path="coupons" element={<AdminCouponsPage />} />
-            <Route path="banners" element={<AdminBannersPage />} />
-            <Route path="announcements" element={<AdminAnnouncementsPage />} />
+            {/* <Route path="banners" element={<AdminBannersPage />} /> */}
+            {/* <Route path="announcements" element={<AdminAnnouncementsPage />} /> */}
           </Route>
         </Routes>
       </main>
@@ -98,7 +102,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <WishlistProvider>
-          <AppLayout />
+          <CartProvider>
+            <AppLayout />
+          </CartProvider>
         </WishlistProvider>
       </AuthProvider>
     </BrowserRouter>

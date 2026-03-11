@@ -2,10 +2,21 @@ import { Star, ShoppingCart, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from './Button';
 import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../context/CartContext';
+import { toast } from 'react-toastify';
+import { formatCurrency } from '../utils/formatUtils';
 
 export default function ProductCard({ product }) {
   const { toggleItem, isWishlisted } = useWishlist();
+  const { addToCart } = useCart();
   const wishlisted = isWishlisted(product.id);
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+    toast.success(`${product.name} added to cart!`);
+  };
 
   return (
     <div className="bg-white rounded-lg border border-border overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col relative">
@@ -21,7 +32,7 @@ export default function ProductCard({ product }) {
             {product.badge}
           </span>
         )}
-        {!product.inStock && (
+        {(!product.stock || product.stock <= 0) && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="px-3 py-1.5 bg-danger text-white text-sm font-semibold rounded-md">
               Out of Stock
@@ -33,11 +44,10 @@ export default function ProductCard({ product }) {
       {/* Wishlist button */}
       <button
         onClick={() => toggleItem(product)}
-        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all z-10 ${
-          wishlisted
-            ? 'bg-danger text-white'
-            : 'bg-white/90 text-text-secondary hover:text-danger hover:bg-white'
-        }`}
+        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all z-10 ${wishlisted
+          ? 'bg-danger text-white'
+          : 'bg-white/90 text-text-secondary hover:text-danger hover:bg-white'
+          }`}
       >
         <Heart size={14} className={wishlisted ? 'fill-white' : ''} />
       </button>
@@ -78,11 +88,11 @@ export default function ProductCard({ product }) {
         <div className="mt-auto flex items-center justify-between pt-3 border-t border-border">
           <div>
             <span className="text-lg font-bold text-text-primary">
-              ${product.price.toLocaleString()}
+              {formatCurrency(product.price)}
             </span>
             {product.originalPrice && (
               <span className="text-xs text-text-secondary line-through ml-1.5">
-                ${product.originalPrice.toLocaleString()}
+                {formatCurrency(product.originalPrice)}
               </span>
             )}
           </div>
@@ -90,7 +100,8 @@ export default function ProductCard({ product }) {
             variant="primary"
             size="sm"
             icon={ShoppingCart}
-            disabled={!product.inStock}
+            disabled={!product.stock || product.stock <= 0}
+            onClick={handleAddToCart}
           >
             Add
           </Button>

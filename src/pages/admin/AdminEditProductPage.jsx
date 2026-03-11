@@ -4,11 +4,12 @@ import { db } from "../../firebase";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-    Package, DollarSign, Image as ImageIcon, Tag, Info, Check,
+    Package, IndianRupee, Image as ImageIcon, Tag, Info, Check,
     X, Plus, Trash2, Shield
 } from "lucide-react";
 import { Button, Card, Input, Alert, Badge, LoadingSpinner } from "../../components/ui";
 import { toast } from "react-toastify";
+import { formatCurrency } from "../../utils/formatUtils";
 
 /**
  * Enhanced Edit Product Page with Modern UI
@@ -93,7 +94,7 @@ const AdminEditProductPage = () => {
 
     const tabs = [
         { id: 'basic', label: 'Basic Info', icon: Package },
-        { id: 'pricing', label: 'Pricing', icon: DollarSign },
+        { id: 'pricing', label: 'Pricing', icon: IndianRupee },
         { id: 'images', label: 'Images', icon: ImageIcon },
         { id: 'details', label: 'Details', icon: Info },
         { id: 'warranty', label: 'Warranty', icon: Shield }
@@ -388,9 +389,14 @@ const AdminEditProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-end">
-                        <Button onClick={() => setActiveTab('pricing')} icon={<DollarSign className="w-4 h-4" />} iconPosition="right">
-                            Next: Pricing
+                    <div className="flex justify-end pt-4 border-t">
+                        <Button
+                            onClick={handleUpdateProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
                 </motion.div>
@@ -403,7 +409,7 @@ const AdminEditProductPage = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="space-y-6"
                 >
-                    <Card title="Pricing Information" icon={<DollarSign className="w-5 h-5 text-green-600" />}>
+                    <Card title="Pricing Information" icon={<IndianRupee className="w-5 h-5 text-green-600" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Input
                                 label="MRP (Maximum Retail Price)"
@@ -411,7 +417,7 @@ const AdminEditProductPage = () => {
                                 placeholder="₹ 0.00"
                                 value={product.mrp}
                                 onChange={(e) => setProduct({ ...product, mrp: e.target.value })}
-                                icon={<DollarSign className="w-4 h-4" />}
+                                icon={<IndianRupee className="w-4 h-4" />}
                             />
 
                             <Input
@@ -424,7 +430,7 @@ const AdminEditProductPage = () => {
                                     sellingPrice: e.target.value,
                                     price: e.target.value
                                 })}
-                                icon={<DollarSign className="w-4 h-4" />}
+                                icon={<IndianRupee className="w-4 h-4" />}
                                 error={errors.sellingPrice}
                                 required
                             />
@@ -441,12 +447,17 @@ const AdminEditProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('basic')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('images')} icon={<ImageIcon className="w-4 h-4" />} iconPosition="right">
-                            Next: Images
+                        <Button
+                            onClick={handleUpdateProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
                 </motion.div>
@@ -502,12 +513,17 @@ const AdminEditProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('pricing')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('details')} icon={<Info className="w-4 h-4" />} iconPosition="right">
-                            Next: Details
+                        <Button
+                            onClick={handleUpdateProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
                 </motion.div>
@@ -647,12 +663,17 @@ const AdminEditProductPage = () => {
                         </div>
                     </Card>
 
-                    <div className="flex justify-between">
+                    <div className="flex justify-between pt-4 border-t">
                         <Button onClick={() => setActiveTab('images')} variant="outline">
                             Back
                         </Button>
-                        <Button onClick={() => setActiveTab('warranty')} icon={<Shield className="w-4 h-4" />} iconPosition="right">
-                            Next: Warranty
+                        <Button
+                            onClick={handleUpdateProduct}
+                            loading={isSubmitting}
+                            icon={<Check className="w-4 h-4" />}
+                            iconPosition="right"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </div>
                 </motion.div>

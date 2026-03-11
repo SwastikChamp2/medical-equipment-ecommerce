@@ -94,7 +94,12 @@ export default function Footer() {
           <div className="flex gap-6">
             <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-primary transition-colors">Accessibility</a>
+            <Link
+              to="/admin"
+              className="px-2.5 py-1 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:border-primary/50 hover:text-primary transition-all duration-300"
+            >
+              Admin Portal
+            </Link>
           </div>
         </div>
       </div>

@@ -17,17 +17,17 @@ export default function DashboardSidebar({
       {/* Logo */}
       <div className="p-6 border-b border-gray-50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+          <Link to="/" className="flex items-center gap-3 cursor-pointer group">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:bg-blue-700 transition-colors">
               <Package className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 leading-tight">Bluecare Pharma</h2>
+              <h2 className="text-lg font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">Bluecare Pharma</h2>
               {!isMobile && (
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin Panel</p>
               )}
             </div>
-          </div>
+          </Link>
           {isMobile && onClose && (
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-6 h-6 text-gray-400" />

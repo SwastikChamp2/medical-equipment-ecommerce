@@ -76,40 +76,25 @@ class AdminOrderService {
             let ordersQuery = collection(db, "orders");
 
             if (filters.status && filters.status !== 'all') {
-                ordersQuery = query(ordersQuery, where("status", "==", filters.status));
+                // If it's pure firestore query, we might miss case-sensitive matches.
+                // We'll handle exact case if matches, but also do client-side filtering below.
+                // ordersQuery = query(ordersQuery, where("status", "==", filters.status));
             }
 
             if (filters.userId) {
                 ordersQuery = query(ordersQuery, where("userId", "==", filters.userId));
             }
 
-            // Date range filters
-            if (filters.startDate) {
-                const startDate = new Date(filters.startDate);
-                ordersQuery = query(ordersQuery, where("createdAt", ">=", startDate));
-            }
-
-            if (filters.endDate) {
-                const endDate = new Date(filters.endDate);
-                endDate.setHours(23, 59, 59, 999);
-                ordersQuery = query(ordersQuery, where("createdAt", "<=", endDate));
-            }
+            // We will filter dates client-side to avoid needing compound indexes with status
+            // that may not exist in this project yet.
 
             // Ordering
             const orderField = filters.orderBy || "orderDate"; // Use orderDate as primary
             const orderDirection = filters.orderDirection || "desc";
 
-            try {
-                ordersQuery = query(ordersQuery, orderBy(orderField, orderDirection));
-            } catch (orderError) {
-                // Fallback to createdAt or no ordering if index is missing
-                try {
-                    ordersQuery = query(ordersQuery, orderBy("createdAt", "desc"));
-                } catch (e) {
-                    console.warn("No index for ordering, fetching unordered");
-                }
-            }
-
+            // We will do all ordering client-side to avoid missing index errors in Firestore
+            // since 'orderDate' and 'status' compound indexes are likely not created.
+            
             if (pagination.limit) {
                 ordersQuery = query(ordersQuery, limit(pagination.limit));
                 if (pagination.lastDoc) {
@@ -117,7 +102,14 @@ class AdminOrderService {
                 }
             }
 
-            const ordersSnapshot = await getDocs(ordersQuery);
+            let ordersSnapshot;
+            try {
+                ordersSnapshot = await getDocs(ordersQuery);
+            } catch (fetchError) {
+                console.warn("Firestore query failed, falling back to client-side filtering:", fetchError.message);
+                const fallbackQuery = collection(db, "orders");
+                ordersSnapshot = await getDocs(fallbackQuery);
+            }
 
             const orders = ordersSnapshot.docs.map(doc => {
                 const data = doc.data();
@@ -141,11 +133,32 @@ class AdminOrderService {
                 };
             });
 
-            // Search filter (client-side)
+            // Client-side filtering (handles fallback cases where Firestore query couldn't filter)
             let filteredOrders = orders;
+
+            // Re-apply status filter if fallback was used
+            // Re-apply status filter if fallback was used or for case-insensitive match
+            if (filters.status && filters.status !== 'all') {
+                filteredOrders = filteredOrders.filter(o => 
+                    (o.status || '').toLowerCase() === filters.status.toLowerCase()
+                );
+            }
+
+            // Client-side date filtering
+            if (filters.startDate) {
+                const startDate = new Date(filters.startDate);
+                filteredOrders = filteredOrders.filter(o => o.orderDate >= startDate);
+            }
+
+            if (filters.endDate) {
+                const endDate = new Date(filters.endDate);
+                endDate.setHours(23, 59, 59, 999);
+                filteredOrders = filteredOrders.filter(o => o.orderDate <= endDate);
+            }
+
             if (filters.searchTerm) {
                 const searchTerm = filters.searchTerm.toLowerCase();
-                filteredOrders = orders.filter(order => {
+                filteredOrders = filteredOrders.filter(order => {
                     return (
                         order.orderId?.toLowerCase().includes(searchTerm) ||
                         order.id?.toLowerCase().includes(searchTerm) ||
@@ -158,6 +171,13 @@ class AdminOrderService {
                 });
             }
 
+            // Re-apply sorting client-side to ensure consistency
+            filteredOrders.sort((a, b) => {
+                const aDate = a.orderDate || new Date(0);
+                const bDate = b.orderDate || new Date(0);
+                return orderDirection === 'desc' ? bDate - aDate : aDate - bDate;
+            });
+
             return {
                 success: true,
                 orders: filteredOrders,
@@ -169,9 +189,73 @@ class AdminOrderService {
             return {
                 success: false,
                 error: error.message,
-                orders: [],
-                totalCount: 0
             };
+        }
+    }
+
+    static async getOrderById(orderId) {
+        try {
+            const orderRef = doc(db, "orders", orderId);
+            const orderSnap = await getDoc(orderRef);
+
+            if (orderSnap.exists()) {
+                const data = orderSnap.data();
+                let orderDate = null;
+                if (data.orderDate?.toDate) {
+                    orderDate = data.orderDate.toDate();
+                } else if (data.createdAt?.toDate) {
+                    orderDate = data.createdAt.toDate();
+                } else if (data.orderDate) {
+                    orderDate = new Date(data.orderDate);
+                } else if (data.createdAt) {
+                    orderDate = new Date(data.createdAt);
+                }
+
+                return {
+                    success: true,
+                    order: {
+                        id: orderSnap.id,
+                        ...data,
+                        total: data.total || data.totalAmount || data.amount || data.netAmount || 0,
+                        orderDate: orderDate,
+                    }
+                };
+            }
+
+            // Fallback: search by orderId field
+            const ordersRef = collection(db, "orders");
+            const q = query(ordersRef, where("orderId", "==", orderId));
+            const qSnap = await getDocs(q);
+
+            if (!qSnap.empty) {
+                const doc = qSnap.docs[0];
+                const data = doc.data();
+                let orderDate = null;
+                if (data.orderDate?.toDate) {
+                    orderDate = data.orderDate.toDate();
+                } else if (data.createdAt?.toDate) {
+                    orderDate = data.createdAt.toDate();
+                } else if (data.orderDate) {
+                    orderDate = new Date(data.orderDate);
+                } else if (data.createdAt) {
+                    orderDate = new Date(data.createdAt);
+                }
+
+                return {
+                    success: true,
+                    order: {
+                        id: doc.id,
+                        ...data,
+                        total: data.total || data.totalAmount || data.amount || data.netAmount || 0,
+                        orderDate: orderDate,
+                    }
+                };
+            }
+
+            return { success: false, error: "Order not found" };
+        } catch (error) {
+            console.error('Error fetching order by ID:', error);
+            return { success: false, error: error.message };
         }
     }
 

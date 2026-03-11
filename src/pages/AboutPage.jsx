@@ -92,7 +92,7 @@ export default function AboutPage() {
           {[
             { icon: Shield, title: 'FDA Cleared Products', desc: 'Every product is clinically validated and sourced from certified manufacturers.' },
             { icon: Heart, title: 'Patient First Approach', desc: 'We curate products that genuinely improve daily health management.' },
-            { icon: Truck, title: 'Fast & Free Delivery', desc: 'Free shipping on $35+ and same-day dispatch on most orders.' },
+            { icon: Truck, title: 'Fast & Free Delivery', desc: 'Free shipping on ₹500+ and same-day dispatch on most orders.' },
             { icon: Users, title: 'Trusted by Professionals', desc: 'Doctors, clinics, and healthcare providers rely on us.' },
             { icon: Award, title: 'Quality Guarantee', desc: '30-day hassle-free returns and 100% satisfaction promise.' },
             { icon: Clock, title: 'Auto-Refill Convenience', desc: 'Never run out — flexible subscriptions with easy skip/cancel.' },
