@@ -11,23 +11,29 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [error, setError] = useState(null);
+
   useEffect(() => {
+    let mounted = true;
     async function fetchOrders() {
       try {
         setLoading(true);
+        setError(null);
         if (user?.uid) {
           const data = await getOrders(user.uid);
-          setOrders(data);
+          if (mounted) setOrders(data);
         } else {
-          setOrders([]);
+          if (mounted) setOrders([]);
         }
       } catch (err) {
         console.error('Error fetching orders:', err);
+        if (mounted) setError('Failed to load orders. Please try again later.');
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
     fetchOrders();
+    return () => { mounted = false; };
   }, [user]);
 
   if (loading) {
@@ -42,6 +48,12 @@ export default function MyOrdersPage() {
     <div className="container-main animate-fade-in py-8">
       <h1 className="text-2xl font-bold text-text-primary mb-2">My Orders</h1>
       <p className="text-sm text-text-secondary mb-8">{orders.length} orders</p>
+
+      {error && (
+        <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 flex items-center gap-2 animate-fade-in">
+          <p className="text-sm font-medium">{error}</p>
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="text-center py-20">

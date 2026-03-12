@@ -5,37 +5,40 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import FilterSidebar from '../components/FilterSidebar';
 import ProductCard from '../components/ProductCard';
 import { getProducts } from '../services/productService';
+import { getCategories } from '../services/categoryService';
 
 const PRODUCTS_PER_PAGE = 6;
 
 export default function ProductListingPage() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('featured');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category');
 
   const [sidebarFilters, setSidebarFilters] = useState({
     categories: [],
-    priceRange: [0, 1000],
+    priceRange: [0, 100000],
     brands: [],
     minRating: 0,
   });
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       try {
-        const data = await getProducts();
+        const [data, cats] = await Promise.all([getProducts(), getCategories()]);
         setProducts(data);
+        setCategories(cats);
       } catch (err) {
         console.error('Error fetching products:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchProducts();
+    fetchData();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -46,8 +49,19 @@ export default function ProductListingPage() {
       activeCategories.push(categoryFilter);
     }
 
+    // Compare by ID (Firestore doc id) or by normalized name for backward compat
+    const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '-');
+
     if (activeCategories.length > 0) {
-      result = result.filter((p) => activeCategories.includes(p.category));
+      result = result.filter((p) => {
+        const prodCatId = (p.categoryId || p.category || p.type || '');
+        const prodCatName = normalize(p.category || p.type || '');
+        return activeCategories.some(cat => 
+          cat === prodCatId || 
+          normalize(cat) === prodCatName ||
+          normalize(cat) === normalize(prodCatId)
+        );
+      });
     }
 
     result = result.filter(
@@ -55,17 +69,35 @@ export default function ProductListingPage() {
     );
 
     if (sidebarFilters.brands.length > 0) {
-      result = result.filter((p) =>
-        sidebarFilters.brands.some((brand) => p.name.includes(brand))
-      );
+      result = result.filter((p) => {
+        const prodBrand = normalize(p.brand);
+        return sidebarFilters.brands.some(b => normalize(b) === prodBrand);
+      });
     }
 
     if (sidebarFilters.minRating > 0) {
       result = result.filter((p) => p.rating >= sidebarFilters.minRating);
     }
 
+    // Sorting
+    result = [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'price-asc':
+          return a.price - b.price;
+        case 'price-desc':
+          return b.price - a.price;
+        case 'rating':
+          return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+        case 'newest':
+          return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0) || b.id.localeCompare(a.id);
+        case 'featured':
+        default:
+          return 0; // Maintain original order
+      }
+    });
+
     return result;
-  }, [products, categoryFilter, sidebarFilters]);
+  }, [products, categoryFilter, sidebarFilters, sortBy]);
 
   // Pagination computed values
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE));
@@ -81,8 +113,15 @@ export default function ProductListingPage() {
     setCurrentPage(1);
   }, []);
 
-  const breadcrumbItems = categoryFilter
-    ? [{ label: 'Products', href: '/products' }, { label: categoryFilter }]
+  // Resolve friendly name for display
+  const categoryLabel = categoryFilter
+    ? (categories.find(c => c.id === categoryFilter)?.label ||
+       categories.find(c => c.id === categoryFilter)?.name ||
+       categoryFilter)
+    : null;
+
+  const breadcrumbItems = categoryLabel
+    ? [{ label: 'Products', href: '/products' }, { label: categoryLabel }]
     : [{ label: 'Products' }];
 
   if (loading) {
@@ -100,7 +139,7 @@ export default function ProductListingPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">
-            {categoryFilter || 'Medical Equipment'}
+            {categoryLabel || 'Medical Equipment'}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
             Showing {pagedProducts.length} of {filteredProducts.length} products
@@ -134,11 +173,30 @@ export default function ProductListingPage() {
         </div>
       </div>
 
-      <div className="flex gap-6 pb-12">
+      <div className="flex gap-6 pb-12 relative">
+        {/* Mobile Overlay Backdrop */}
+        {showFilters && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/50 z-[60] animate-fade-in"
+            onClick={() => setShowFilters(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-64 shrink-0`}>
-          <FilterSidebar onFilterChange={handleFilterChange} />
-        </div>
+        <aside className={`
+          fixed lg:relative inset-y-0 left-0 z-[70] lg:z-10
+          w-[280px] lg:w-64 bg-white lg:bg-transparent
+          transform transition-transform duration-300 ease-in-out
+          ${showFilters ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+          lg:block shrink-0
+          p-6 lg:p-0 border-r lg:border-r-0 border-border lg:border-none
+          overflow-y-auto custom-scrollbar
+        `}>
+          <FilterSidebar 
+            onFilterChange={handleFilterChange} 
+            onClose={() => setShowFilters(false)}
+          />
+        </aside>
 
         {/* Product Grid */}
         <div className="flex-1">

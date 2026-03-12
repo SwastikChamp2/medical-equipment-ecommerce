@@ -11,12 +11,15 @@ import {
   Stethoscope,
   UserCheck,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import Button from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import { getProducts } from '../services/productService';
 import { getCategories } from '../services/categoryService';
 import { getReviews } from '../services/reviewService';
+import ReadingMaterials from '../components/ReadingMaterials';
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -24,6 +27,26 @@ export default function HomePage() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewFilter, setReviewFilter] = useState('all');
+  const [activeFaq, setActiveFaq] = useState(0);
+
+  const faqs = [
+    {
+      question: "How long does shipping take?",
+      answer: "Standard shipping typically takes 3-5 business days. We also offer express shipping options that deliver within 1-2 business days across India."
+    },
+    {
+      question: "Are your products FDA cleared?",
+      answer: "Yes, all our medical equipment, including glucose monitors and CPAP machines, are clinically validated for accuracy and safety."
+    },
+    {
+      question: "Can I cancel my subscription anytime?",
+      answer: "Absolutely! You have full control over your subscriptions. You can skip a delivery, change the frequency, or cancel entirely from your account dashboard."
+    },
+    {
+      question: "What is your return policy?",
+      answer: "We offer a 30-day hassle-free return policy for unused and unopened products. If you receive a defective item, we'll provide a full replacement or refund immediately."
+    }
+  ];
 
   useEffect(() => {
     async function fetchData() {
@@ -35,7 +58,44 @@ export default function HomePage() {
         ]);
         setProducts(prods);
         setCategories(cats);
-        setReviews(revs);
+
+        // Use fetched reviews or fallback to sample reviews for the demo
+        if (revs && revs.length > 0) {
+          setReviews(revs);
+        } else {
+          setReviews([
+            {
+              id: '1',
+              name: 'Dr. James Chen',
+              role: 'Pulmonologist, Bay Area Sleep Clinic',
+              avatar: 'https://i.pravatar.cc/150?u=james',
+              rating: 5,
+              type: 'doctor',
+              text: 'I recommend MedEquip Pro to all my patients who need CPAP supplies. The product quality matches what we use in-clinic, and the subscribe-and-save model ensures my patients stay compliant with their therapy.',
+              date: '1 month ago'
+            },
+            {
+              id: '2',
+              name: 'Sarah Mitchell',
+              role: 'Type 1 Diabetic for 12 years',
+              avatar: 'https://i.pravatar.cc/150?u=sarah',
+              rating: 5,
+              type: 'patient',
+              text: 'Having a reliable source for FDA-cleared glucose monitors and test strips is essential for my daily routine. MedEquip Pro consistently delivers quality products, and the business ordering process is simple.',
+              date: '2 weeks ago'
+            },
+            {
+              id: '3',
+              name: 'Dr. Robert Kim',
+              role: 'Sports Medicine Physician',
+              avatar: 'https://i.pravatar.cc/150?u=robert',
+              rating: 4,
+              type: 'doctor',
+              text: 'The healthcare products provided here are excellent. High build quality with proper support. I’ve started recommending these for all home health needs.',
+              date: '3 weeks ago'
+            }
+          ]);
+        }
       } catch (err) {
         console.error('Error fetching home data:', err);
       } finally {
@@ -67,11 +127,11 @@ export default function HomePage() {
             <div className="animate-slide-up">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-sm font-medium mb-6 border border-primary/15 text-primary">
                 <Shield size={14} />
-                FDA Cleared &amp; Clinically Validated
+                Clinically Validated &amp; Trusted
               </span>
               <h1 className="text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight mb-6 text-text-primary">
-                Your Health,
-                <span className="block text-primary">Delivered to Your Door</span>
+                Complete Diabetes Care
+                <span className="block text-primary">Delivered at Home</span>
               </h1>
               <p className="text-lg text-text-secondary max-w-xl mb-8 leading-relaxed">
                 Shop diabetes monitors, CPAP machines, blood pressure cuffs,
@@ -82,12 +142,6 @@ export default function HomePage() {
                 <Button variant="primary" size="lg" iconRight={ArrowRight} href="/products">
                   Shop Now
                 </Button>
-              </div>
-              {/* Mini trust badges under CTA */}
-              <div className="flex items-center gap-5 mt-8 text-xs text-text-secondary">
-                <span className="flex items-center gap-1.5"><Shield size={14} className="text-primary" /> FDA Cleared</span>
-                <span className="flex items-center gap-1.5"><Truck size={14} className="text-primary" /> Free Shipping</span>
-                <span className="flex items-center gap-1.5"><RefreshCw size={14} className="text-primary" /> 30-Day Returns</span>
               </div>
             </div>
             <div className="hidden lg:block relative">
@@ -119,7 +173,7 @@ export default function HomePage() {
         <div className="container-main py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Shield, label: 'FDA Cleared', sub: 'Clinically validated' },
+              { icon: Shield, label: 'Quality Certified', sub: 'Clinically validated' },
               { icon: Truck, label: 'Free Shipping', sub: 'On orders over ₹500' },
               { icon: Headphones, label: 'Expert Support', sub: 'Licensed specialists' },
               { icon: RefreshCw, label: 'Easy Returns', sub: '30-day hassle-free' },
@@ -208,7 +262,7 @@ export default function HomePage() {
       {reviews.length > 0 && (
         <section className="container-main py-16">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-text-primary mb-3">Trusted by Patients &amp; Doctors</h2>
+            <h2 className="text-3xl font-bold text-text-primary mb-3">Trusted by Patients &amp; Practitioners</h2>
             <p className="text-text-secondary max-w-xl mx-auto">
               Real reviews from real people — healthcare professionals and patients who depend on our products every day
             </p>
@@ -216,7 +270,7 @@ export default function HomePage() {
               {[
                 { label: 'All Reviews', value: 'all' },
                 { label: 'Patient Reviews', value: 'patient', icon: UserCheck },
-                { label: 'Doctor Reviews', value: 'doctor', icon: Stethoscope },
+                { label: 'Practitioner Reviews', value: 'doctor', icon: Stethoscope },
               ].map((tab) => (
                 <button
                   key={tab.value}
@@ -253,7 +307,7 @@ export default function HomePage() {
                         ? 'bg-blue-50 text-blue-600'
                         : 'bg-green-50 text-green-600'
                         }`}>
-                        {review.type === 'doctor' ? '🩺 Doctor' : '💚 Patient'}
+                        {review.type === 'doctor' ? '🩺 Practitioner' : '💚 Patient'}
                       </span>
                     </div>
                   </div>
@@ -272,6 +326,112 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* FAQ Section */}
+      <section className="bg-gray-50 py-16 border-y border-border">
+        <div className="container-main max-w-4xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-text-primary mb-3">Frequently Asked Questions</h2>
+            <p className="text-text-secondary">Everything you need to know about our products and services</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-xl border border-border overflow-hidden transition-all duration-300 hover:shadow-md"
+              >
+                <button
+                  onClick={() => setActiveFaq(activeFaq === index ? -1 : index)}
+                  className="w-full flex items-center justify-between p-5 text-left transition-colors hover:bg-gray-50/50"
+                >
+                  <span className="font-semibold text-text-primary">{faq.question}</span>
+                  <div className={`transition-transform duration-300 ${activeFaq === index ? 'rotate-180' : ''}`}>
+                    <ChevronDown size={20} className="text-primary" />
+                  </div>
+                </button>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${activeFaq === index ? 'max-h-96' : 'max-h-0'
+                    }`}
+                >
+                  <div className="p-6 pt-2 text-text-secondary border-t border-border/40 bg-gray-50/50 leading-relaxed">
+                    {faq.answer}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Blog Section */}
+      <section className="bg-white py-16">
+        <div className="container-main">
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-bold text-text-primary mb-2">Health & Wellness Blog</h2>
+              <p className="text-text-secondary">Expert tips and latest medical news</p>
+            </div>
+            <Button variant="secondary" href="/blog" iconRight={ArrowRight}>
+              View All Posts
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                id: 'managing-diabetes-at-home',
+                title: '5 Essential Tips for Managing Diabetes at Home',
+                excerpt: 'Consistency is key when it comes to blood sugar management. Learn the daily habits that can make a major difference.',
+                image: 'https://images.unsplash.com/photo-1505751172107-573220ad703a?auto=format&fit=crop&q=80&w=1000',
+                date: 'March 10, 2024'
+              },
+              {
+                id: 'understanding-cgm-sensors',
+                title: 'Understanding CGM Sensors: The Future of Monitoring',
+                excerpt: 'Continuous Glucose Monitors have revolutionized how we track vitals. Find out how they work.',
+                image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&q=80&w=1000',
+                date: 'March 8, 2024'
+              },
+              {
+                id: 'respiratory-health-guide',
+                title: 'A Guide to Better Respiratory Health',
+                excerpt: 'From CPAP machines to simple breathing exercises, discover how to improve your lung function.',
+                image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000',
+                date: 'March 5, 2024'
+              }
+            ].map((blog) => (
+              <Link
+                key={blog.id}
+                to={`/blog/${blog.id}`}
+                className="group bg-white rounded-2xl overflow-hidden border border-border shadow-sm hover:shadow-xl transition-all duration-300"
+              >
+                <div className="aspect-video relative overflow-hidden">
+                  <img
+                    src={blog.image}
+                    alt={blog.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="p-6">
+                  <p className="text-xs text-text-secondary mb-2">{blog.date}</p>
+                  <h3 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                    {blog.title}
+                  </h3>
+                  <p className="text-sm text-text-secondary line-clamp-2 mb-4">
+                    {blog.excerpt}
+                  </p>
+                  <span className="text-primary font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Read Article <ArrowRight size={16} />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Reading Materials Section */}
+      <ReadingMaterials />
+
       {/* Subscribe & Save Banner */}
       <section className="container-main py-16">
         <div className="relative bg-gradient-to-r from-primary to-[#0e47c1] rounded-2xl overflow-hidden p-10 lg:p-14">
@@ -289,7 +449,7 @@ export default function HomePage() {
               </span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
-              Subscribe &amp; Save up to 15%
+              Get 15% offer on Subscriptions.
             </h2>
             <p className="text-white/80 text-lg mb-8 leading-relaxed">
               Buy High Quality CGM sensors, test strips, CPAP

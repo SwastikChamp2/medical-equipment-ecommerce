@@ -72,7 +72,7 @@ export default function ProductCard({ product }) {
                 key={i}
                 size={13}
                 className={
-                  i < Math.floor(product.rating)
+                  i < Math.floor(product.rating || 0)
                     ? 'text-warning fill-warning'
                     : 'text-gray-200 fill-gray-200'
                 }
@@ -80,7 +80,7 @@ export default function ProductCard({ product }) {
             ))}
           </div>
           <span className="text-xs text-text-secondary">
-            {product.rating} ({product.reviews})
+            {product.rating || '0'} ({product.reviews || '0'})
           </span>
         </div>
 

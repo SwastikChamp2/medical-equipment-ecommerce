@@ -30,6 +30,12 @@ import AdminCouponsPage from './pages/admin/AdminCouponsPage';
 import AdminBannersPage from './pages/admin/AdminBannersPage';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage';
 import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
+import WhatsAppButton from './components/WhatsAppButton';
+import BlogPage from './pages/BlogPage';
+import BlogDetailPage from './pages/BlogDetailPage';
+import ServicesPage from './pages/ServicesPage';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const dashboardRoutes = [
   '/invoices',
@@ -71,9 +77,13 @@ function AppLayout() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:id" element={<BlogDetailPage />} />
+          <Route path="/services" element={<ServicesPage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/orders" element={<MyOrdersPage />} />
+          <Route path="/my-orders" element={<MyOrdersPage />} />
           <Route path="/orders/:orderId" element={<OrderDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminPage />}>
@@ -93,6 +103,8 @@ function AppLayout() {
         </Routes>
       </main>
       {!isDashboard && <Footer />}
+      {!isDashboard && <WhatsAppButton />}
+      <ToastContainer position="bottom-right" />
     </div>
   );
 }

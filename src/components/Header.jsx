@@ -110,7 +110,7 @@ export function PublicHeader() {
                           {categories.map((cat) => (
                             <Link
                               key={cat.id}
-                              to={`/products?category=${encodeURIComponent(cat.label || cat.name)}`}
+                              to={`/products?category=${encodeURIComponent(cat.id)}`}
                               className="flex items-center gap-3 px-4 py-3 text-sm text-text-secondary hover:text-primary hover:bg-primary-light/50 transition-all group mx-2 rounded-xl"
                               onClick={() => setDropdownOpen(false)}
                             >
@@ -283,7 +283,7 @@ export function PublicHeader() {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                to={`/products?category=${encodeURIComponent(cat.label || cat.name)}`}
+                to={`/products?category=${encodeURIComponent(cat.id)}`}
                 className="block px-6 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-gray-50"
                 onClick={() => setMobileOpen(false)}
               >

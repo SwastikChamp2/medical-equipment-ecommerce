@@ -61,7 +61,9 @@ const AdminEditProductPage = () => {
                         warranty: data.warranty || { available: false, period: "", details: "" },
                         guarantee: data.guarantee || { available: false, period: "", details: "" },
                         specifications: data.specifications || [],
-                        features: data.features || []
+                        features: data.features || [],
+                        rating: data.rating || "",
+                        reviews: data.reviews || ""
                     });
                 } else {
                     toast.error("Product not found");
@@ -133,6 +135,8 @@ const AdminEditProductPage = () => {
                 mrp: Number(product.mrp || product.sellingPrice),
                 price: Number(product.sellingPrice),
                 stock: Number(product.stock),
+                rating: Number(product.rating || 0),
+                reviews: Number(product.reviews || 0),
                 updatedAt: new Date()
             };
 
@@ -340,7 +344,7 @@ const AdminEditProductPage = () => {
                                 </select>
                             </div>
 
-                            <Input
+                             <Input
                                 label="Stock Quantity"
                                 type="number"
                                 placeholder="Available stock"
@@ -348,6 +352,26 @@ const AdminEditProductPage = () => {
                                 onChange={(e) => setProduct({ ...product, stock: e.target.value })}
                                 error={errors.stock}
                                 required
+                            />
+
+                            <Input
+                                label="Rating (0.0 - 5.0)"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="5"
+                                placeholder="e.g., 4.5"
+                                value={product.rating}
+                                onChange={(e) => setProduct({ ...product, rating: e.target.value })}
+                            />
+
+                            <Input
+                                label="Review Count"
+                                type="number"
+                                min="0"
+                                placeholder="e.g., 25"
+                                value={product.reviews}
+                                onChange={(e) => setProduct({ ...product, reviews: e.target.value })}
                             />
 
                             <div className="col-span-1 md:col-span-2">

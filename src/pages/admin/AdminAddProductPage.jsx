@@ -38,7 +38,9 @@ const AdminAddProductPage = () => {
         guarantee: { available: false, period: "", details: "" },
         importDetails: { isImported: false, country: "", deliveryNote: "" },
         specifications: [],
-        features: []
+        features: [],
+        rating: "",
+        reviews: ""
     });
 
     const [tagInput, setTagInput] = useState("");
@@ -161,6 +163,8 @@ const AdminAddProductPage = () => {
                 mrp: Number(newProduct.mrp || newProduct.price),
                 price: Number(newProduct.sellingPrice || newProduct.price),
                 stock: Number(newProduct.stock),
+                rating: Number(newProduct.rating || 0),
+                reviews: Number(newProduct.reviews || 0),
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -379,6 +383,26 @@ const AdminAddProductPage = () => {
                                 onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
                                 error={errors.stock}
                                 required
+                            />
+
+                            <Input
+                                label="Rating (0.0 - 5.0)"
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="5"
+                                placeholder="e.g., 4.5"
+                                value={newProduct.rating}
+                                onChange={(e) => setNewProduct({ ...newProduct, rating: e.target.value })}
+                            />
+
+                            <Input
+                                label="Review Count"
+                                type="number"
+                                min="0"
+                                placeholder="e.g., 25"
+                                value={newProduct.reviews}
+                                onChange={(e) => setNewProduct({ ...newProduct, reviews: e.target.value })}
                             />
 
                             <div className="col-span-1 md:col-span-2">

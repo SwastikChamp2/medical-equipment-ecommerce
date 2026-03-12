@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Star } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 import Button from './Button';
 import { getBrands } from '../services/brandService';
 import { getCategories } from '../services/categoryService'; // Use static import instead
 
-export default function FilterSidebar({ onFilterChange }) {
+export default function FilterSidebar({ onFilterChange, onClose }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [priceRange, setPriceRange] = useState([0, 100000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [minRating, setMinRating] = useState(0);
   const [brands, setBrands] = useState([]);
@@ -16,16 +16,24 @@ export default function FilterSidebar({ onFilterChange }) {
     // Fetch brands
     getBrands()
       .then((data) => {
-        const brandNames = data.map((b) => (typeof b === 'string' ? b : b.name || b.id));
-        setBrands(brandNames);
+        // Assume data is array of objects { id, name, ... }
+        const brandMapped = data.map((b) => ({
+          id: b.id,
+          label: b.name || b.label || b.id
+        }));
+        setBrands(brandMapped);
       })
       .catch((err) => console.error('Error fetching brands:', err));
 
     // Fetch categories
     getCategories()
       .then((data) => {
-        const categoryNames = data.map(c => c.label || c.name);
-        setCategories(categoryNames);
+        // Assume data is array of objects { id, label, ... }
+        const catMapped = data.map(c => ({
+          id: c.id,
+          label: c.label || c.name || c.id
+        }));
+        setCategories(catMapped);
       })
       .catch((err) => console.error('Error fetching categories:', err));
   }, []);
@@ -36,43 +44,51 @@ export default function FilterSidebar({ onFilterChange }) {
   useEffect(() => {
     if (onFilterChangeRef.current) {
       onFilterChangeRef.current({
-        categories: selectedCategories,
+        categories: selectedCategories, // These are now IDs
         priceRange,
-        brands: selectedBrands,
+        brands: selectedBrands, // These are now IDs
         minRating,
       });
     }
   }, [selectedCategories, priceRange, selectedBrands, minRating]);
 
-  const toggleCategory = (cat) => {
+  const toggleCategory = (catId) => {
     setSelectedCategories((prev) =>
-      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
     );
   };
 
-  const toggleBrand = (brand) => {
+  const toggleBrand = (brandId) => {
     setSelectedBrands((prev) =>
-      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+      prev.includes(brandId) ? prev.filter((id) => id !== brandId) : [...prev, brandId]
     );
   };
 
   const resetAll = () => {
     setSelectedCategories([]);
-    setPriceRange([0, 50000]);
+    setPriceRange([0, 100000]);
     setSelectedBrands([]);
     setMinRating(0);
   };
 
   return (
-    <aside className="w-full bg-white rounded-lg border border-border p-5 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-lg text-text-primary">Filters</h2>
-        <button
-          onClick={resetAll}
-          className="text-sm font-medium text-primary hover:text-primary-dark transition-colors"
-        >
-          Reset All
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={resetAll}
+            className="text-sm font-medium text-primary hover:text-primary-dark transition-colors"
+          >
+            Reset
+          </button>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 text-text-secondary transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Categories */}
@@ -84,17 +100,17 @@ export default function FilterSidebar({ onFilterChange }) {
           <div className="space-y-2">
             {categories.map((cat) => (
               <label
-                key={cat}
+                key={cat.id}
                 className="flex items-center gap-2 cursor-pointer group"
               >
                 <input
                   type="checkbox"
-                  checked={selectedCategories.includes(cat)}
-                  onChange={() => toggleCategory(cat)}
+                  checked={selectedCategories.includes(cat.id)}
+                  onChange={() => toggleCategory(cat.id)}
                   className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary transition-colors cursor-pointer"
                 />
                 <span className="text-sm text-text-secondary group-hover:text-primary transition-colors">
-                  {cat}
+                  {cat.label}
                 </span>
               </label>
             ))}
@@ -135,17 +151,17 @@ export default function FilterSidebar({ onFilterChange }) {
           <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
             {brands.map((brand) => (
               <label
-                key={brand}
+                key={brand.id}
                 className="flex items-center gap-2 cursor-pointer group"
               >
                 <input
                   type="checkbox"
-                  checked={selectedBrands.includes(brand)}
-                  onChange={() => toggleBrand(brand)}
+                  checked={selectedBrands.includes(brand.id)}
+                  onChange={() => toggleBrand(brand.id)}
                   className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary transition-colors cursor-pointer"
                 />
                 <span className="text-sm text-text-secondary group-hover:text-primary transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
-                  {brand}
+                  {brand.label}
                 </span>
               </label>
             ))}
@@ -189,6 +205,6 @@ export default function FilterSidebar({ onFilterChange }) {
           ))}
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

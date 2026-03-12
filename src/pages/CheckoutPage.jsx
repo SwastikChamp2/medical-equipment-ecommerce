@@ -57,7 +57,7 @@ export default function CheckoutPage() {
       await createOrder(orderData);
       clearCart();
       toast.success('Order placed successfully!');
-      navigate(user ? '/my-orders' : '/');
+      navigate(user ? '/orders' : '/');
     } catch (error) {
       console.error('Error creating order:', error);
       toast.error('Failed to place order. Please try again.');

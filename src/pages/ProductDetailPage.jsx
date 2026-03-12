@@ -19,6 +19,9 @@ import Button from '../components/Button';
 import ProductCard from '../components/ProductCard';
 import { getProductById, getProducts } from '../services/productService';
 import { formatCurrency } from '../utils/formatUtils';
+import { useCart } from '../context/CartContext';
+import { toast } from 'react-toastify';
+import { useWishlist } from '../context/WishlistContext';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -28,6 +31,23 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
   const [selectedImage, setSelectedImage] = useState(0);
+  const { addToCart } = useCart();
+  const { toggleItem, isWishlisted } = useWishlist();
+  const wishlisted = product ? isWishlisted(product.id) : false;
+
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        stock: product.stock
+      }, quantity);
+      toast.success(`${product.name} added to cart!`);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -187,7 +207,14 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button variant="primary" size="lg" icon={ShoppingCart} className="flex-1">
+              <Button 
+                variant="primary" 
+                size="lg" 
+                icon={ShoppingCart} 
+                className="flex-1"
+                onClick={handleAddToCart}
+                disabled={!product.stock || product.stock <= 0}
+              >
                 Add to Cart
               </Button>
               <Button variant="secondary" size="lg" icon={FileText}>
@@ -196,8 +223,13 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors">
-                <Heart size={16} /> Wishlist
+              <button 
+                onClick={() => toggleItem(product)}
+                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                  wishlisted ? 'text-danger' : 'text-text-secondary hover:text-primary'
+                }`}
+              >
+                <Heart size={16} className={wishlisted ? 'fill-danger text-danger' : ''} /> {wishlisted ? 'In Wishlist' : 'Wishlist'}
               </button>
               <button className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors">
                 <Share2 size={16} /> Share

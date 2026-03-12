@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Package, Truck, MapPin, Copy, CheckCircle, Clock, ArrowLeft, Loader2 } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Package, Truck, MapPin, Copy, CheckCircle, Clock, ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
 import { formatCurrency } from '../utils/formatUtils';
 import { getOrderById } from '../services/orderService';
+import { useCart } from '../context/CartContext';
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +28,25 @@ export default function OrderDetailPage() {
     }
     fetchOrder();
   }, [orderId]);
+
+  const handleRepeatOrder = () => {
+    if (!order || !order.items) return;
+    
+    // Add each item to cart
+    order.items.forEach(item => {
+      // Re-map fields if necessary (Order items usually have id/productId, name, price, image)
+      const product = {
+        id: item.productId,
+        name: item.name,
+        price: item.price,
+        image: item.image
+      };
+      addToCart(product, item.quantity);
+    });
+    
+    // Redirect to cart
+    navigate('/cart');
+  };
 
   if (loading) {
     return (
@@ -144,6 +166,16 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
+
+          <Button 
+            variant="primary" 
+            size="md" 
+            icon={RefreshCcw} 
+            onClick={handleRepeatOrder} 
+            className="w-full"
+          >
+            Repeat this Order
+          </Button>
 
           <Button variant="secondary" size="md" icon={ArrowLeft} href="/orders" className="w-full">
             Back to My Orders
