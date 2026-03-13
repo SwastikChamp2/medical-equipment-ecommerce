@@ -45,9 +45,6 @@ export default function ProductListingPage() {
     let result = products;
 
     const activeCategories = [...sidebarFilters.categories];
-    if (categoryFilter && activeCategories.length === 0) {
-      activeCategories.push(categoryFilter);
-    }
 
     // Compare by ID (Firestore doc id) or by normalized name for backward compat
     const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '-');
@@ -113,11 +110,12 @@ export default function ProductListingPage() {
     setCurrentPage(1);
   }, []);
 
-  // Resolve friendly name for display
-  const categoryLabel = categoryFilter
-    ? (categories.find(c => c.id === categoryFilter)?.label ||
-       categories.find(c => c.id === categoryFilter)?.name ||
-       categoryFilter)
+  // Resolve friendly name for display - prioritize sidebar selection
+  const activeCategoryId = sidebarFilters.categories.length > 0 ? sidebarFilters.categories[0] : null;
+  const categoryLabel = activeCategoryId
+    ? (categories.find(c => c.id === activeCategoryId)?.label ||
+       categories.find(c => c.id === activeCategoryId)?.name ||
+       activeCategoryId)
     : null;
 
   const breadcrumbItems = categoryLabel
@@ -193,6 +191,7 @@ export default function ProductListingPage() {
           overflow-y-auto custom-scrollbar
         `}>
           <FilterSidebar 
+            initialCategory={categoryFilter}
             onFilterChange={handleFilterChange} 
             onClose={() => setShowFilters(false)}
           />

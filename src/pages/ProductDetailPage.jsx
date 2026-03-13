@@ -117,7 +117,7 @@ export default function ProductDetailPage() {
               <button
                 key={i}
                 onClick={() => setSelectedImage(i)}
-                className={`rounded-lg overflow-hidden border-2 transition-all ${selectedImage === i
+                className={`rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${selectedImage === i
                     ? 'border-primary shadow-md'
                     : 'border-border hover:border-gray-300'
                   }`}
@@ -190,7 +190,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center border border-border rounded-lg">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-2.5 hover:bg-gray-50 transition-colors"
+                  className="p-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <Minus size={16} />
                 </button>
@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="p-2.5 hover:bg-gray-50 transition-colors"
+                  className="p-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <Plus size={16} />
                 </button>
@@ -225,13 +225,13 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => toggleItem(product)}
-                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                className={`flex items-center gap-1.5 text-sm transition-colors cursor-pointer ${
                   wishlisted ? 'text-danger' : 'text-text-secondary hover:text-primary'
                 }`}
               >
                 <Heart size={16} className={wishlisted ? 'fill-danger text-danger' : ''} /> {wishlisted ? 'In Wishlist' : 'Wishlist'}
               </button>
-              <button className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors">
+              <button className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors cursor-pointer">
                 <Share2 size={16} /> Share
               </button>
             </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Minus, Plus, Trash2, Tag, ArrowRight, ShoppingBag, Package } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
 import { useCart } from '../context/CartContext';
@@ -54,13 +54,26 @@ export default function CartPage() {
               key={item.id}
               className="bg-white rounded-xl border border-border p-5 flex gap-5 hover:shadow-sm transition-shadow"
             >
-              <Link to={`/product/${item.id}`} className="shrink-0">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-24 h-24 rounded-lg object-cover"
-                />
-              </Link>
+              {(() => {
+                const isService = item.category === 'Services' || (item.id && String(item.id).startsWith('service-'));
+                if (isService) return null;
+                
+                return (
+                  <Link to={`/product/${item.id}`} className="shrink-0">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-24 h-24 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-50 rounded-lg flex items-center justify-center">
+                        <Package size={32} className="text-text-secondary" />
+                      </div>
+                    )}
+                  </Link>
+                );
+              })()}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -68,7 +81,7 @@ export default function CartPage() {
                       {item.category}
                     </span>
                     <Link
-                      to={`/product/${item.id}`}
+                      to={item.category === 'Services' ? '/services' : `/product/${item.id}`}
                       className="block text-sm font-semibold text-text-primary hover:text-primary mt-0.5"
                     >
                       {item.name}
@@ -76,7 +89,7 @@ export default function CartPage() {
                   </div>
                   <button
                     onClick={() => removeItem(item.id)}
-                    className="p-1.5 rounded-lg text-text-secondary hover:text-danger hover:bg-danger-light transition-colors shrink-0"
+                    className="p-1.5 rounded-lg text-text-secondary hover:text-danger hover:bg-danger-light transition-colors shrink-0 cursor-pointer"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -86,7 +99,7 @@ export default function CartPage() {
                   <div className="flex items-center border border-border rounded-lg">
                     <button
                       onClick={() => updateQuantity(item.id, -1)}
-                      className="p-2 hover:bg-gray-50 transition-colors"
+                      className="p-2 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <Minus size={14} />
                     </button>
@@ -95,7 +108,7 @@ export default function CartPage() {
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
-                      className="p-2 hover:bg-gray-50 transition-colors"
+                      className="p-2 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
                       <Plus size={14} />
                     </button>

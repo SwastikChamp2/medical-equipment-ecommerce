@@ -1,4 +1,4 @@
-import { Star, ShoppingCart, Heart } from 'lucide-react';
+import { Star, ShoppingCart, Heart, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Button from './Button';
 import { useWishlist } from '../context/WishlistContext';
@@ -6,8 +6,8 @@ import { useCart } from '../context/CartContext';
 import { toast } from 'react-toastify';
 import { formatCurrency } from '../utils/formatUtils';
 
-export default function ProductCard({ product }) {
-  const { toggleItem, isWishlisted } = useWishlist();
+export default function ProductCard({ product, isWishlistPage = false }) {
+  const { toggleItem, isWishlisted, removeItem } = useWishlist();
   const { addToCart } = useCart();
   const wishlisted = isWishlisted(product.id);
 
@@ -15,6 +15,9 @@ export default function ProductCard({ product }) {
     e.preventDefault();
     e.stopPropagation();
     addToCart(product);
+    if (isWishlistPage) {
+      removeItem(product.id);
+    }
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -41,15 +44,23 @@ export default function ProductCard({ product }) {
         )}
       </Link>
 
-      {/* Wishlist button */}
+      {/* Wishlist/Delete button */}
       <button
         onClick={() => toggleItem(product)}
-        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all z-10 ${wishlisted
-          ? 'bg-danger text-white'
-          : 'bg-white/90 text-text-secondary hover:text-danger hover:bg-white'
+        title={isWishlistPage ? "Remove from wishlist" : wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all z-10 cursor-pointer ${
+          isWishlistPage 
+            ? 'bg-red-50 text-danger hover:bg-danger hover:text-white' 
+            : wishlisted
+              ? 'bg-danger text-white'
+              : 'bg-white/90 text-text-secondary hover:text-danger hover:bg-white'
           }`}
       >
-        <Heart size={14} className={wishlisted ? 'fill-white' : ''} />
+        {isWishlistPage ? (
+          <Trash2 size={14} />
+        ) : (
+          <Heart size={14} className={wishlisted ? 'fill-white' : ''} />
+        )}
       </button>
 
       {/* Content */}

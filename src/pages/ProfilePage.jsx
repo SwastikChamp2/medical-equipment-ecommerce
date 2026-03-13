@@ -188,7 +188,7 @@ export default function ProfilePage() {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-text-primary">{order.id}</p>
+                          <p className="text-sm font-semibold text-text-primary">OrderId: {order.id}</p>
                           <p className="text-xs text-text-secondary mt-0.5">{order.date} • {(order.items || []).length} item(s)</p>
                         </div>
                         <div className="flex items-center gap-3">

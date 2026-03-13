@@ -75,7 +75,7 @@ export default function MyOrdersPage() {
                     <Package size={18} className="text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">{order.id}</p>
+                    <p className="text-sm font-semibold text-text-primary">OrderId: {order.id}</p>
                     <p className="text-xs text-text-secondary">
                       Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || 'Unknown')}
                     </p>
@@ -88,11 +88,21 @@ export default function MyOrdersPage() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
-                  {(order.items || []).slice(0, 3).map((item, i) => (
-                    <img key={i} src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover border-2 border-white" />
-                  ))}
+                  {(() => {
+                    const displayableItems = (order.items || []).filter(i => i.image && i.category !== 'Services');
+                    if (displayableItems.length > 0) {
+                      return displayableItems.slice(0, 3).map((item, i) => (
+                        <img key={i} src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover border-2 border-white" />
+                      ));
+                    }
+                    return (
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-white">
+                        <Package size={16} className="text-text-secondary" />
+                      </div>
+                    );
+                  })()}
                 </div>
-                <p className="text-sm text-text-secondary flex-1">
+                <p className="text-sm text-text-secondary flex-1 truncate">
                   {(order.items || []).map((i) => i.name).join(', ')}
                 </p>
                 <p className="text-lg font-bold text-text-primary">{formatCurrency(order.total || 0)}</p>

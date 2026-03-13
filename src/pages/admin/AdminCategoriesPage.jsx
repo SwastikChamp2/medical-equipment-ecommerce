@@ -210,7 +210,20 @@ const AdminCategoriesPage = () => {
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-slate-900 text-[14px]">{row.label}</span>
                                                     <span className="text-[11px] font-medium text-slate-400">
-                                                        {products.filter(p => p.type === row.label).length} Products
+                                                        {(() => {
+                                                            const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '-');
+                                                            return products.filter(p => {
+                                                                const prodCatId = (p.categoryId || p.category || p.type || '');
+                                                                const prodCatName = normalize(p.category || p.type || '');
+                                                                return (
+                                                                    row.id === prodCatId ||
+                                                                    normalize(row.label || '') === prodCatName ||
+                                                                    normalize(row.label || '') === normalize(prodCatId) ||
+                                                                    normalize(row.id || '') === prodCatName ||
+                                                                    normalize(row.id || '') === normalize(prodCatId)
+                                                                );
+                                                            }).length;
+                                                        })()} Products
                                                     </span>
                                                 </div>
                                             )}

@@ -4,13 +4,20 @@ import Button from './Button';
 import { getBrands } from '../services/brandService';
 import { getCategories } from '../services/categoryService'; // Use static import instead
 
-export default function FilterSidebar({ onFilterChange, onClose }) {
-  const [selectedCategories, setSelectedCategories] = useState([]);
+export default function FilterSidebar({ onFilterChange, onClose, initialCategory }) {
+  const [selectedCategories, setSelectedCategories] = useState(initialCategory ? [initialCategory] : []);
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [minRating, setMinRating] = useState(0);
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
+
+  // Sycn with initialCategory if it changes from outside (e.g. Header nav)
+  useEffect(() => {
+    if (initialCategory) {
+      setSelectedCategories([initialCategory]);
+    }
+  }, [initialCategory]);
 
   useEffect(() => {
     // Fetch brands
@@ -78,7 +85,7 @@ export default function FilterSidebar({ onFilterChange, onClose }) {
         <div className="flex items-center gap-2">
           <button
             onClick={resetAll}
-            className="text-sm font-medium text-primary hover:text-primary-dark transition-colors"
+            className="text-sm font-medium text-primary hover:text-primary-dark transition-colors cursor-pointer"
           >
             Reset
           </button>

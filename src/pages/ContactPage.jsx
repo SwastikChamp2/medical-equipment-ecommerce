@@ -61,7 +61,7 @@ export default function ContactPage() {
             ].map((card, i) => (
               <div
                 key={i}
-                className="group flex items-start gap-4 bg-white rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300"
+                className="group flex items-start gap-4 bg-white rounded-2xl border border-border p-6 hover:shadow-xl transition-all duration-300 cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center group-hover:bg-primary transition-colors shrink-0">
                   <card.icon size={20} className="text-primary group-hover:text-white transition-colors" />
@@ -142,7 +142,7 @@ export default function ContactPage() {
                     <label className="block text-sm font-medium text-text-primary mb-2">
                       Subject
                     </label>
-                    <select className="w-full px-4 py-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition">
+                    <select className="w-full px-4 py-3 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white transition cursor-pointer">
                       <option>Product Question</option>
                       <option>Order Status</option>
                       <option>Returns & Refunds</option>

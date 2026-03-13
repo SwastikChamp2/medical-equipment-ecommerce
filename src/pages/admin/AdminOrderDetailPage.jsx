@@ -154,13 +154,15 @@ const AdminOrderDetailPage = () => {
                         <div className="divide-y divide-gray-50">
                             {(order.items || []).map((item, idx) => (
                                 <div key={idx} className="p-6 flex items-center gap-6 group hover:bg-slate-50/50 transition-colors">
-                                    <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 relative">
-                                        <img
-                                            src={item.image || 'https://via.placeholder.com/100'}
-                                            alt=""
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                    </div>
+                                    {!(item.category === 'Services' || item.type === 'Services' || (item.id && String(item.id).startsWith('service-'))) && (
+                                        <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 relative">
+                                            <img
+                                                src={item.image || 'https://via.placeholder.com/100'}
+                                                alt=""
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            />
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                                             {item.name || item.title || 'Product Item'}
@@ -241,13 +243,19 @@ const AdminOrderDetailPage = () => {
                         </div>
                         <div className="flex items-start gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600 text-lg font-black">
-                                {(order.userName || 'C').charAt(0).toUpperCase()}
+                                {(order.userName || order.shippingAddress?.firstName || 'C').charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <h4 className="font-bold text-slate-900 text-[16px] mb-1">{order.userName || 'Guest Customer'}</h4>
+                                <h4 className="font-bold text-slate-900 text-[16px] mb-1">
+                                    {order.userName || 
+                                     (order.shippingAddress?.firstName && order.shippingAddress?.lastName 
+                                        ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` 
+                                        : order.shippingAddress?.name) || 
+                                     'Guest Customer'}
+                                </h4>
                                 <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider
-                                    ${order.isInstitutional ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
-                                    {order.isInstitutional ? 'Institutional Account' : 'Individual Account'}
+                                    ${(order.userType === 'Institutional' || order.isInstitutional) ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                                    {(order.userType === 'Institutional' || order.isInstitutional) ? 'Institutional Account' : 'Individual Account'}
                                 </div>
                             </div>
                         </div>
@@ -258,7 +266,7 @@ const AdminOrderDetailPage = () => {
                             </div>
                             <div className="flex items-center gap-3 text-slate-600">
                                 <Phone className="w-4 h-4 text-slate-400" />
-                                <span className="text-[13px] font-medium">{order.userPhone || '+91 98765-43210'}</span>
+                                <span className="text-[13px] font-medium">{order.userPhone || order.shippingAddress?.phone || 'No phone provided'}</span>
                             </div>
                             <div className="flex items-center gap-3 text-slate-600">
                                 <CreditCard className="w-4 h-4 text-slate-400" />
@@ -279,13 +287,17 @@ const AdminOrderDetailPage = () => {
                                     order.shippingAddress
                                 ) : (
                                     <>
-                                        {order.shippingAddress?.street || order.shippingAddress?.addressLine1 || order.shippingAddress?.name || 'N/A'}<br />
+                                        {(order.shippingAddress?.firstName && order.shippingAddress?.lastName) && (
+                                            <p className="font-bold mb-1">{order.shippingAddress.firstName} {order.shippingAddress.lastName}</p>
+                                        )}
+                                        {order.shippingAddress?.streetAddress || order.shippingAddress?.street || order.shippingAddress?.addressLine1 || order.shippingAddress?.name || 'N/A'}<br />
                                         {[
                                             order.shippingAddress?.city,
                                             order.shippingAddress?.state,
-                                            order.shippingAddress?.zip || order.shippingAddress?.zipCode
+                                            order.shippingAddress?.zipCode || order.shippingAddress?.zip
                                         ].filter(Boolean).join(', ')}
                                         {order.shippingAddress?.country && <><br />{order.shippingAddress.country}</>}
+                                        {order.shippingAddress?.phone && <><br />Phone: {order.shippingAddress.phone}</>}
                                     </>
                                 )}
                             </p>

@@ -72,14 +72,24 @@ const AdminOrdersPage = () => {
         </td>
     );
 
-    const CustomerCell = ({ order }) => (
-        <td className="py-6 px-10">
-            <div className="font-bold text-slate-900 text-[15px]">{order.userName || 'swastikchamp2'}</div>
-            <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
-                {order.isInstitutional || order.type === 'institutional' ? 'Institutional' : 'Individual'} • {order.department || 'ICU DEPT.'}
-            </div>
-        </td>
-    );
+    const CustomerCell = ({ order }) => {
+        const displayName = order.userName || 
+            (order.shippingAddress?.firstName && order.shippingAddress?.lastName 
+                ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` 
+                : order.shippingAddress?.name) || 
+            'Guest Customer';
+            
+        const isInstitutional = order.userType === 'Institutional' || order.isInstitutional || order.type === 'institutional';
+
+        return (
+            <td className="py-6 px-10">
+                <div className="font-bold text-slate-900 text-[15px]">{displayName}</div>
+                <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
+                    {isInstitutional ? 'Institutional' : 'Individual'} {order.department ? `• ${order.department}` : ''}
+                </div>
+            </td>
+        );
+    };
 
     const StatusBadge = ({ status }) => {
         const config = {
@@ -345,16 +355,22 @@ const AdminOrdersPage = () => {
                                 <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Customer</p>
-                                        <p className="font-semibold">{selectedOrder.userName || 'Customer'}</p>
+                                        <p className="font-semibold">{selectedOrder.userName || (selectedOrder.shippingAddress?.firstName ? `${selectedOrder.shippingAddress.firstName} ${selectedOrder.shippingAddress.lastName}` : 'Guest Customer')}</p>
                                         <p className="text-sm text-gray-600">{selectedOrder.userEmail}</p>
                                         <p className="text-sm text-gray-600">{selectedOrder.userPhone || 'No phone'}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Shipping Address</p>
-                                        <p className="text-sm text-gray-600">
-                                            {selectedOrder.shippingAddress?.addressLine1 || selectedOrder.shippingAddress || 'N/A'}<br />
-                                            {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode}
-                                        </p>
+                                        <div className="text-sm text-gray-600">
+                                            {typeof selectedOrder.shippingAddress === 'string' ? (
+                                                selectedOrder.shippingAddress
+                                            ) : (
+                                                <>
+                                                    <p>{selectedOrder.shippingAddress?.streetAddress || selectedOrder.shippingAddress?.addressLine1 || 'N/A'}</p>
+                                                    <p>{selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state} {selectedOrder.shippingAddress?.zipCode || selectedOrder.shippingAddress?.zip}</p>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -367,7 +383,9 @@ const AdminOrdersPage = () => {
                                         {(selectedOrder.items || []).map((item, idx) => (
                                             <div key={idx} className="flex justify-between items-center bg-white border border-gray-100 p-3 rounded-lg shadow-sm">
                                                 <div className="flex items-center gap-3">
-                                                    {item.image && <img src={item.image} alt="" className="w-12 h-12 rounded object-cover" />}
+                                                    {item.image && !(item.category === 'Services' || item.type === 'Services' || (item.id && String(item.id).startsWith('service-'))) && (
+                                                        <img src={item.image} alt="" className="w-12 h-12 rounded object-cover" />
+                                                    )}
                                                     <div>
                                                         <p className="font-medium text-sm">{item.name || item.title || 'Product'}</p>
                                                         <p className="text-xs text-gray-500">Qty: {item.quantity || item.qty || 1} × {formatCurrency(item.price || 0)}</p>

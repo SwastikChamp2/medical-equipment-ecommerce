@@ -1,11 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Trash2 } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import Button from '../components/Button';
-import { formatCurrency } from '../utils/formatUtils';
 import { useWishlist } from '../context/WishlistContext';
+import ProductCard from '../components/ProductCard';
 
 export default function WishlistPage() {
-  const { items, removeItem } = useWishlist();
+  const { items } = useWishlist();
 
   return (
     <div className="container-main animate-fade-in py-8">
@@ -22,32 +21,11 @@ export default function WishlistPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {items.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl border border-border overflow-hidden hover:shadow-md transition-shadow group">
-              <Link to={`/product/${product.id}`} className="block relative h-48 overflow-hidden">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                {product.badge && (
-                  <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase">{product.badge}</span>
-                )}
-              </Link>
-              <div className="p-4">
-                <Link to={`/product/${product.id}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors line-clamp-2">{product.name}</Link>
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => removeItem(product.id)}
-                      className="p-2 rounded-lg text-text-secondary hover:text-danger hover:bg-red-50 transition-colors"
-                      title="Remove from wishlist"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button className="p-2 rounded-lg text-text-secondary hover:text-primary hover:bg-primary-light transition-colors" title="Add to cart">
-                      <ShoppingCart size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              isWishlistPage={true} 
+            />
           ))}
         </div>
       )}

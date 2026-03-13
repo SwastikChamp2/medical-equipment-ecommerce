@@ -36,10 +36,12 @@ export default function OrderDetailPage() {
     order.items.forEach(item => {
       // Re-map fields if necessary (Order items usually have id/productId, name, price, image)
       const product = {
-        id: item.productId,
+        id: item.id || item.productId,
         name: item.name,
         price: item.price,
-        image: item.image
+        image: item.image,
+        category: item.category || ((item.id || item.productId) && String(item.id || item.productId).startsWith('service-') ? 'Services' : 'Product'),
+        stock: 100 // Default for repeatable items
       };
       addToCart(product, item.quantity);
     });
@@ -66,11 +68,12 @@ export default function OrderDetailPage() {
     );
   }
 
+  const status = (order.status || '').toLowerCase();
   const steps = [
     { label: 'Placed', done: true },
-    { label: 'Processing', done: ['processing', 'shipped', 'delivered'].includes(order.status) },
-    { label: 'Shipped', done: ['shipped', 'delivered'].includes(order.status) },
-    { label: 'Delivered', done: order.status === 'delivered' },
+    { label: 'Processing', done: ['processing', 'approved', 'packed', 'shipped', 'delivered'].includes(status) },
+    { label: 'Shipped', done: ['shipped', 'delivered'].includes(status) },
+    { label: 'Delivered', done: status === 'delivered' },
   ];
 
   return (
@@ -79,7 +82,7 @@ export default function OrderDetailPage() {
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">{order.id}</h1>
+          <h1 className="text-2xl font-bold text-text-primary">OrderId: {order.id}</h1>
           <p className="text-sm text-text-secondary mt-1">
             Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || 'Unknown')}
           </p>
@@ -111,16 +114,27 @@ export default function OrderDetailPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-border p-5">
           <h3 className="font-semibold text-text-primary mb-4">Items Ordered</h3>
           <div className="space-y-4">
-            {(order.items || []).map((item, i) => (
-              <div key={i} className="flex gap-4 items-center">
-                <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-                <div className="flex-1 min-w-0">
-                  <Link to={`/product/${item.productId}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">{item.name}</Link>
-                  <p className="text-xs text-text-secondary mt-0.5">Qty: {item.quantity}</p>
+            {(order.items || []).map((item, i) => {
+              const isService = item.category === 'Services' || String(item.id || '').startsWith('service-');
+              return (
+                <div key={i} className="flex gap-4 items-center">
+                  {!isService && (
+                    item.image ? (
+                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
+                        <Package size={20} className="text-text-secondary" />
+                      </div>
+                    )
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <Link to={isService ? `/services` : `/product/${item.id || item.productId}`} className="text-sm font-semibold text-text-primary hover:text-primary transition-colors">{item.name}</Link>
+                    <p className="text-xs text-text-secondary mt-0.5">Qty: {item.quantity}</p>
+                  </div>
+                  <p className="text-sm font-bold text-text-primary">{formatCurrency(item.price * item.quantity)}</p>
                 </div>
-                <p className="text-sm font-bold text-text-primary">{formatCurrency(item.price * item.quantity)}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-4 pt-4 border-t border-border flex justify-between">
             <span className="text-sm font-semibold text-text-primary">Order Total</span>
@@ -136,7 +150,21 @@ export default function OrderDetailPage() {
               <MapPin size={16} className="text-primary" />
               <h3 className="font-semibold text-text-primary text-sm">Shipping Address</h3>
             </div>
-            <p className="text-sm text-text-secondary leading-relaxed">{order.shippingAddress}</p>
+            <div className="text-sm text-text-secondary leading-relaxed">
+              {typeof order.shippingAddress === 'object' ? (
+                <>
+                  <p className="font-semibold text-text-primary">
+                    {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                  </p>
+                  {order.shippingAddress.institution && <p>{order.shippingAddress.institution}</p>}
+                  <p>{order.shippingAddress.streetAddress}</p>
+                  <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
+                  <p className="mt-1">Phone: {order.shippingAddress.phone}</p>
+                </>
+              ) : (
+                <p>{order.shippingAddress}</p>
+              )}
+            </div>
           </div>
 
           {/* Tracking */}

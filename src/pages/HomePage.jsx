@@ -19,12 +19,14 @@ import ProductCard from '../components/ProductCard';
 import { getProducts } from '../services/productService';
 import { getCategories } from '../services/categoryService';
 import { getReviews } from '../services/reviewService';
+import { getBlogs } from '../services/blogService';
 import ReadingMaterials from '../components/ReadingMaterials';
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewFilter, setReviewFilter] = useState('all');
   const [activeFaq, setActiveFaq] = useState(0);
@@ -51,13 +53,30 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [prods, cats, revs] = await Promise.all([
+        const [prods, cats, revs, fetchedBlogs] = await Promise.all([
           getProducts(),
           getCategories(),
           getReviews(),
+          getBlogs(),
         ]);
         setProducts(prods);
-        setCategories(cats);
+        // Calculate product counts per category using same logic as ProductListingPage
+        const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, '-');
+        const categoriesWithCount = cats.map(cat => {
+          const count = prods.filter(p => {
+            const prodCatId = (p.categoryId || p.category || p.type || '');
+            const prodCatName = normalize(p.category || p.type || '');
+            return (
+              cat.id === prodCatId ||
+              normalize(cat.label || '') === prodCatName ||
+              normalize(cat.label || '') === normalize(prodCatId) ||
+              normalize(cat.id || '') === prodCatName ||
+              normalize(cat.id || '') === normalize(prodCatId)
+            );
+          }).length;
+          return { ...cat, count };
+        });
+        setCategories(categoriesWithCount);
 
         // Use fetched reviews or fallback to sample reviews for the demo
         if (revs && revs.length > 0) {
@@ -96,6 +115,8 @@ export default function HomePage() {
             }
           ]);
         }
+
+        setBlogs(fetchedBlogs?.slice(0, 3) || []);
       } catch (err) {
         console.error('Error fetching home data:', err);
       } finally {
@@ -376,29 +397,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                id: 'managing-diabetes-at-home',
-                title: '5 Essential Tips for Managing Diabetes at Home',
-                excerpt: 'Consistency is key when it comes to blood sugar management. Learn the daily habits that can make a major difference.',
-                image: 'https://images.unsplash.com/photo-1505751172107-573220ad703a?auto=format&fit=crop&q=80&w=1000',
-                date: 'March 10, 2024'
-              },
-              {
-                id: 'understanding-cgm-sensors',
-                title: 'Understanding CGM Sensors: The Future of Monitoring',
-                excerpt: 'Continuous Glucose Monitors have revolutionized how we track vitals. Find out how they work.',
-                image: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?auto=format&fit=crop&q=80&w=1000',
-                date: 'March 8, 2024'
-              },
-              {
-                id: 'respiratory-health-guide',
-                title: 'A Guide to Better Respiratory Health',
-                excerpt: 'From CPAP machines to simple breathing exercises, discover how to improve your lung function.',
-                image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=1000',
-                date: 'March 5, 2024'
-              }
-            ].map((blog) => (
+            {blogs.map((blog) => (
               <Link
                 key={blog.id}
                 to={`/blog/${blog.id}`}
@@ -406,18 +405,24 @@ export default function HomePage() {
               >
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={blog.image}
+                    src={blog.image || blog.imageUrl || blog.coverImage}
                     alt={blog.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 </div>
                 <div className="p-6">
-                  <p className="text-xs text-text-secondary mb-2">{blog.date}</p>
+                  <p className="text-xs text-text-secondary mb-2">
+                    {blog.date ||
+                      (blog.createdAt?.toDate
+                        ? blog.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                        : blog.createdAt)}
+                  </p>
                   <h3 className="text-lg font-bold text-text-primary mb-3 group-hover:text-primary transition-colors line-clamp-2">
                     {blog.title}
                   </h3>
                   <p className="text-sm text-text-secondary line-clamp-2 mb-4">
-                    {blog.excerpt}
+                    {blog.excerpt || blog.summary || blog.description}
                   </p>
                   <span className="text-primary font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all">
                     Read Article <ArrowRight size={16} />

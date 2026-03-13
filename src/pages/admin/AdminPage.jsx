@@ -139,7 +139,12 @@ const AdminDashboard = () => {
                     monthlyRev += orderTotal;
                 }
 
-                return { id: doc.id, orderDateObj: orderDate || new Date(0), ...data };
+                return { 
+                    id: doc.id, 
+                    orderDateObj: orderDate || new Date(0), 
+                    ...data,
+                    total: orderTotal // Normalize total for consistency
+                };
             });
 
             // Recent Orders (sort in-memory to bypass Firestore missing index errors)
@@ -506,14 +511,19 @@ const AdminDashboard = () => {
                                                     <div className="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-700 font-bold text-xs uppercase">
                                                         {(order.userName || 'C').charAt(0)}
                                                     </div>
-                                                    <span className="text-sm font-medium text-gray-800">{order.userName || 'Customer'}</span>
+                                                    <span className="text-sm font-medium text-gray-800">
+                                                        {order.userName || 
+                                                         (order.shippingAddress?.firstName 
+                                                          ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName || ''}` 
+                                                          : 'Customer')}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {order.items?.[0]?.name || 'Medical Equipment'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                {formatCurrency(order.totalAmount || 0)}
+                                                {formatCurrency(order.total || 0)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <Badge
