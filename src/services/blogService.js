@@ -15,6 +15,7 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { adminDb } from '../adminFirebase';
 
 const COLLECTION = 'blogs';
 
@@ -73,7 +74,7 @@ export async function getBlogById(id) {
  * Create a new blog
  */
 export async function createBlog(blogData) {
-  const docRef = await addDoc(collection(db, COLLECTION), {
+  const docRef = await addDoc(collection(adminDb, COLLECTION), {
     ...blogData,
     views: 0,
     viewedBy: [],
@@ -89,7 +90,7 @@ export async function createBlog(blogData) {
  * Update existing blog
  */
 export async function updateBlog(id, updateData) {
-  const ref = doc(db, COLLECTION, id);
+  const ref = doc(adminDb, COLLECTION, id);
   await updateDoc(ref, {
     ...updateData,
     updatedAt: serverTimestamp()
@@ -103,9 +104,9 @@ export async function updateBlog(id, updateData) {
 export function subscribeToBlogsAdmin(callback) {
   let q;
   try {
-    q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+    q = query(collection(adminDb, COLLECTION), orderBy('createdAt', 'desc'));
   } catch {
-    q = collection(db, COLLECTION);
+    q = collection(adminDb, COLLECTION);
   }
   return onSnapshot(q, (snapshot) => {
     const blogs = snapshot.docs.map((d) => ({
@@ -123,7 +124,7 @@ export function subscribeToBlogsAdmin(callback) {
  * Delete blog
  */
 export async function deleteBlog(id) {
-  await deleteDoc(doc(db, COLLECTION, id));
+  await deleteDoc(doc(adminDb, COLLECTION, id));
 }
 
 /**

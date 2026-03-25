@@ -199,8 +199,16 @@ export default function ProfilePage() {
         {/* Sidebar */}
         <div className="bg-white rounded-xl border border-border p-4">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border">
-            <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-primary font-bold text-sm ring-2 ring-primary/20 shrink-0">
-              {(user?.name || user?.email || 'U').split(' ').map(n => n[0]).join('').toUpperCase()}
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-primary-light flex items-center justify-center ring-2 ring-primary/20 shrink-0">
+              <img
+                src={user?.avatar || user?.photoURL || '/default-avatar.svg'}
+                alt={user?.name || 'User'}
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+              <span className="text-primary font-bold text-sm">
+                {(user?.name || user?.email || 'U').split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-text-primary truncate">{user.name}</p>

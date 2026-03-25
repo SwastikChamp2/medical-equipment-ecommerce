@@ -12,12 +12,18 @@ export default function FilterSidebar({ onFilterChange, onClose, initialCategory
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  // Sycn with initialCategory if it changes from outside (e.g. Header nav)
+  // Sync with initialCategory if it changes from outside (e.g. Header nav)
   useEffect(() => {
-    if (initialCategory) {
+    if (initialCategory && categories.length > 0) {
+      // initialCategory comes as a label from the URL — resolve it to the category ID
+      const match = categories.find(
+        c => c.label === initialCategory || c.id === initialCategory
+      );
+      setSelectedCategories(match ? [match.id] : [initialCategory]);
+    } else if (initialCategory) {
       setSelectedCategories([initialCategory]);
     }
-  }, [initialCategory]);
+  }, [initialCategory, categories]);
 
   useEffect(() => {
     // Fetch brands

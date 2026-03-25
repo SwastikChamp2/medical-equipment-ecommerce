@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, updateDoc, writeBatch, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb as db } from "../../adminFirebase";
 import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -704,7 +704,7 @@ const AdminProductsPage = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((product) => (
-                                    <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <tr key={product.id} className={`hover:bg-slate-50/50 transition-colors group ${!product.isVisible ? 'opacity-50 grayscale' : ''}`}>
                                         <td className="py-6 px-4">
                                             <input
                                                 type="checkbox"

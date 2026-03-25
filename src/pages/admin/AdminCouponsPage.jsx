@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb as db } from "../../adminFirebase";
 import { motion } from "framer-motion";
 import {
     Plus,

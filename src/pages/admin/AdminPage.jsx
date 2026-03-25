@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { collection, query, getDocs, orderBy, limit } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb as db } from "../../adminFirebase";
 import { formatCurrency } from "../../utils/formatUtils";
 import {
     LayoutDashboard, Users, ShoppingBag, Layers, Image as ImageIcon,

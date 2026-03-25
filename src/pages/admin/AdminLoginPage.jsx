@@ -4,7 +4,7 @@ import { Lock, Mail, Eye, EyeOff, Shield, Loader2, ArrowRight } from "lucide-rea
 import { Button, Input, Card, Alert } from "../../components/ui";
 import { motion } from "framer-motion";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb } from "../../adminFirebase";
 import { toast } from "react-toastify";
 
 /**
@@ -26,15 +26,22 @@ const AdminLoginPage = ({ onVerify }) => {
 
         try {
             // Check the dedicated 'admins' collection in Firestore
-            const adminsRef = collection(db, "admins");
+            const adminsRef = collection(adminDb, "admins");
             const q = query(adminsRef, where("email", "==", email), where("password", "==", password));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-                // Valid admin found — set session flags only, do NOT touch Firebase Auth
-                // This keeps the regular user's auth session intact
-                // admin_verified no longer stored — window flag used instead
+                // Check if admin is disabled
+                const adminData = querySnapshot.docs[0].data();
+                if (adminData.isDisabled) {
+                    setError("Your admin account has been disabled. Contact a Super Admin.");
+                    setLoading(false);
+                    return;
+                }
+
+                // Valid admin — store session and grant access
                 sessionStorage.setItem("admin_email", email);
+                sessionStorage.setItem("admin_role", adminData.role || "Admin");
                 onVerify(true);
                 setLoading(false);
                 return;
@@ -54,8 +61,8 @@ const AdminLoginPage = ({ onVerify }) => {
                     console.error("Could not auto-create admin doc:", e);
                 }
 
-                // admin_verified no longer stored — window flag used instead
                 sessionStorage.setItem("admin_email", email);
+                sessionStorage.setItem("admin_role", "Super Admin");
                 onVerify(true);
                 setLoading(false);
                 return;
@@ -64,16 +71,6 @@ const AdminLoginPage = ({ onVerify }) => {
             setError("Invalid administrator credentials.");
         } catch (err) {
             console.error("Admin login error:", err);
-
-            // Fallback if Firestore read is blocked
-            if (email === "admin@bluecare.com" && password === "admin789") {
-                // admin_verified no longer stored — window flag used instead
-                sessionStorage.setItem("admin_email", email);
-                onVerify(true);
-                setLoading(false);
-                return;
-            }
-
             setError("Server connection failed or access denied.");
         } finally {
             setLoading(false);

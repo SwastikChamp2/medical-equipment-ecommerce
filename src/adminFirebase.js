@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -11,8 +11,8 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
-export default app;
+// Secondary Firebase app instance for admin — keeps user auth untouched
+const adminApp = initializeApp(firebaseConfig, 'adminApp');
+export const adminAuth = getAuth(adminApp);
+export const adminDb = getFirestore(adminApp);
+export default adminApp;

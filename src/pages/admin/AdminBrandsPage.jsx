@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, getDoc, arrayUnion, arrayRemove } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb as db } from "../../adminFirebase";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Plus, Edit, Trash2,

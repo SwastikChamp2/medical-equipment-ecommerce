@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+import { adminAuth } from '../adminFirebase';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 
 const SidebarProfile = () => {
     const { user, signOut } = useAuth();
@@ -35,7 +37,8 @@ const SidebarProfile = () => {
 
     const handleLogout = async () => {
         if (isAdminVerified) {
-            // Admin logout — only clear admin session, don't sign out Firebase Auth
+            // Admin logout — sign out of admin auth, clear admin session
+            try { await firebaseSignOut(adminAuth); } catch {}
             window.__adminVerified = false;
             sessionStorage.removeItem("admin_verified");
             sessionStorage.removeItem("admin_email");

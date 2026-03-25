@@ -14,7 +14,7 @@ import {
     writeBatch,
     increment
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { adminDb as db } from '../adminFirebase';
 
 /**
  * Order status constants for consistent admin management

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import { adminDb as db } from "../../adminFirebase";
 import { formatCurrency } from "../../utils/formatUtils";
 import { motion } from "framer-motion";
 import { ArrowLeft, Layers, TrendingUp } from "lucide-react";

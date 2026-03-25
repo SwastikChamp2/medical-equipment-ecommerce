@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
+import { adminDb as db } from "../../adminFirebase";
 import { motion } from "framer-motion";
 import {
     Mail, Search, Plus, Filter,
     Download, UserX, Chrome,
     ExternalLink, ShoppingBag, Slash,
-    Users, Shield
+    Users, Shield, Trash2, ShieldOff, ShieldCheck, Ban, CheckCircle, Lock, Eye, EyeOff
 } from "lucide-react";
 import { Modal, Button, Card, LoadingSpinner, Badge, Input } from "../../components/ui";
+import { ConfirmDialog } from "../../components/ui";
 import { toast } from "react-toastify";
 import { formatCurrency } from "../../utils/formatUtils";
+
+const SUPER_ADMIN_PASSWORD = "BlueCare@SuperAdmin2024";
 
 /**
  * Enhanced Users Management Page with Professional Features
@@ -35,6 +38,19 @@ const AdminUsersPage = () => {
         active: 0,
         suspended: 0
     });
+
+    // Admin management state
+    const [superAdminVerified, setSuperAdminVerified] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [superAdminPassword, setSuperAdminPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [pendingAdminAction, setPendingAdminAction] = useState(null); // { type, admin }
+    const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+    const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', role: 'Admin', userId: '' });
+    const [adminSearchTerm, setAdminSearchTerm] = useState('');
+    const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
 
     useEffect(() => {
         fetchUsers();
@@ -99,13 +115,14 @@ const AdminUsersPage = () => {
 
                 return {
                     ...adminData,
-                    orders: [], // Admins typically don't have orders, or they'd be in the users collection
+                    orders: [],
                     totalSpent: 0,
                     orderCount: 0,
-                    role: 'Admin', // Force role to Admin for documents in this collection
-                    accStatus: 'Active',
+                    role: adminData.role || 'Admin',
+                    accStatus: adminData.isDisabled ? 'Disabled' : 'Active',
+                    isDisabled: adminData.isDisabled || false,
+                    isAdmin: true, // flag to identify admin collection docs
                     averageOrderValue: 0,
-                    // Ensure they have a name if missing
                     name: adminData.name || "Administrator"
                 };
             });
@@ -172,11 +189,18 @@ const AdminUsersPage = () => {
         } else if (filterStatus === "users") {
             filtered = filtered.filter(user => user.role === "User");
         } else if (filterStatus === "admins") {
-            filtered = filtered.filter(user => user.role === "Admin");
+            filtered = filtered.filter(user => user.role === "Admin" || user.role === "Super Admin");
         }
 
         // Apply sorting
         filtered.sort((a, b) => {
+            // When on admins tab, Super Admin always comes first
+            if (filterStatus === "admins") {
+                const aIsSuperAdmin = a.role === 'Super Admin' ? 1 : 0;
+                const bIsSuperAdmin = b.role === 'Super Admin' ? 1 : 0;
+                if (aIsSuperAdmin !== bIsSuperAdmin) return bIsSuperAdmin - aIsSuperAdmin;
+            }
+
             let aVal, bVal;
 
             switch (sortBy) {
@@ -294,6 +318,133 @@ const AdminUsersPage = () => {
         window.URL.revokeObjectURL(url);
 
         toast.success("Users exported successfully!");
+    };
+
+    /**
+     * Verify super admin password before performing admin actions
+     */
+    const verifySuperAdminPassword = () => {
+        if (superAdminPassword === SUPER_ADMIN_PASSWORD) {
+            setSuperAdminVerified(true);
+            setShowPasswordModal(false);
+            setSuperAdminPassword('');
+            setPasswordError('');
+            toast.success("Super Admin access granted");
+            // Execute pending action if any
+            if (pendingAdminAction) {
+                executePendingAction(pendingAdminAction);
+                setPendingAdminAction(null);
+            }
+        } else {
+            setPasswordError('Incorrect super admin password');
+        }
+    };
+
+    const requireSuperAdmin = (action) => {
+        if (superAdminVerified) {
+            executePendingAction(action);
+        } else {
+            setPendingAdminAction(action);
+            setShowPasswordModal(true);
+        }
+    };
+
+    const executePendingAction = async (action) => {
+        if (!action) return;
+        switch (action.type) {
+            case 'delete': setConfirmDelete(action.admin); break;
+            case 'promote': await handlePromoteAdmin(action.admin); break;
+            case 'demote': await handleDemoteAdmin(action.admin); break;
+            case 'disable': await handleDisableAdmin(action.admin); break;
+            case 'enable': await handleEnableAdmin(action.admin); break;
+            case 'addAdmin': setShowAddAdminModal(true); break;
+        }
+    };
+
+    const handleDeleteAdmin = async (admin) => {
+        try {
+            await deleteDoc(doc(db, "admins", admin.id));
+            setUsers(prev => prev.filter(u => u.id !== admin.id));
+            setConfirmDelete(null);
+            toast.success(`Admin "${admin.name || admin.email}" deleted`);
+        } catch (error) {
+            console.error("Error deleting admin:", error);
+            toast.error("Failed to delete admin");
+        }
+    };
+
+    const handlePromoteAdmin = async (admin) => {
+        try {
+            await updateDoc(doc(db, "admins", admin.id), { role: 'Super Admin' });
+            setUsers(prev => prev.map(u => u.id === admin.id ? { ...u, role: 'Super Admin' } : u));
+            toast.success(`${admin.name || admin.email} promoted to Super Admin`);
+        } catch (error) {
+            console.error("Error promoting admin:", error);
+            toast.error("Failed to promote admin");
+        }
+    };
+
+    const handleDemoteAdmin = async (admin) => {
+        try {
+            await updateDoc(doc(db, "admins", admin.id), { role: 'Admin' });
+            setUsers(prev => prev.map(u => u.id === admin.id ? { ...u, role: 'Admin' } : u));
+            toast.success(`${admin.name || admin.email} demoted to Admin`);
+        } catch (error) {
+            console.error("Error demoting admin:", error);
+            toast.error("Failed to demote admin");
+        }
+    };
+
+    const handleDisableAdmin = async (admin) => {
+        try {
+            await updateDoc(doc(db, "admins", admin.id), { isDisabled: true });
+            setUsers(prev => prev.map(u => u.id === admin.id ? { ...u, isDisabled: true, accStatus: 'Disabled' } : u));
+            toast.success(`${admin.name || admin.email} has been disabled`);
+        } catch (error) {
+            console.error("Error disabling admin:", error);
+            toast.error("Failed to disable admin");
+        }
+    };
+
+    const handleEnableAdmin = async (admin) => {
+        try {
+            await updateDoc(doc(db, "admins", admin.id), { isDisabled: false });
+            setUsers(prev => prev.map(u => u.id === admin.id ? { ...u, isDisabled: false, accStatus: 'Active' } : u));
+            toast.success(`${admin.name || admin.email} has been enabled`);
+        } catch (error) {
+            console.error("Error enabling admin:", error);
+            toast.error("Failed to enable admin");
+        }
+    };
+
+    const handleAddAdmin = async () => {
+        if (!newAdmin.userId) {
+            toast.error("Please select a user first");
+            return;
+        }
+        if (!newAdmin.password) {
+            toast.error("Password is required");
+            return;
+        }
+        try {
+            await addDoc(collection(db, "admins"), {
+                name: newAdmin.name || 'Administrator',
+                email: newAdmin.email,
+                password: newAdmin.password,
+                role: newAdmin.role || 'Admin',
+                isDisabled: false,
+                sourceUserId: newAdmin.userId,
+                createdAt: new Date()
+            });
+            setShowAddAdminModal(false);
+            setNewAdmin({ name: '', email: '', password: '', role: 'Admin', userId: '' });
+            setAdminSearchTerm('');
+            toast.success(`${newAdmin.name || newAdmin.email} promoted to admin`);
+            fetchUsers();
+        } catch (error) {
+            console.error("Error adding admin:", error);
+            toast.error("Failed to add admin");
+        }
     };
 
     /**
@@ -434,6 +585,15 @@ const AdminUsersPage = () => {
                             className="w-full bg-slate-50/50 border border-slate-100 rounded-xl py-3 pl-12 pr-4 text-[14px] font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all"
                         />
                     </div>
+                    {filterStatus === 'admins' && (
+                        <Button
+                            onClick={() => requireSuperAdmin({ type: 'addAdmin' })}
+                            className="h-[44px] px-5 bg-[#2563eb] hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-100 rounded-xl"
+                            icon={<Plus className="w-4 h-4" />}
+                        >
+                            Add Admin
+                        </Button>
+                    )}
                 </div>
 
                 {/* Table Section */}
@@ -453,26 +613,26 @@ const AdminUsersPage = () => {
                             </p>
                         </div>
                     ) : (
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead className="bg-[#f8fafc]">
                                 <tr className="text-[11px] font-bold text-slate-400 uppercase tracking-wider border-y border-slate-50">
-                                    <th className="py-4 px-8 pl-24">Name</th>
-                                    <th className="py-4 px-8">Email</th>
-                                    <th className="py-4 px-8 text-center">Role</th>
-                                    <th className="py-4 px-8 text-center">Registration Date</th>
-                                    <th className="py-4 px-8 text-right pr-10">Account Status</th>
+                                    <th className="py-4 px-6 pl-8">Name</th>
+                                    <th className="py-4 px-6">Email</th>
+                                    <th className="py-4 px-6 text-center">Role</th>
+                                    <th className="py-4 px-6 text-center">Registration Date</th>
+                                    <th className="py-4 px-6 text-center">Status</th>
+                                    {filterStatus === 'admins' && <th className="py-4 px-6 text-center">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => {
                                     const role = user.role;
-                                    const vStatus = user.vStatus;
                                     const accStatus = user.accStatus;
 
                                     return (
-                                        <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="py-6 px-8">
-                                                <div className="flex items-center gap-4">
+                                        <tr key={user.id} className={`hover:bg-slate-50/50 transition-colors group ${user.isDisabled ? 'opacity-50' : ''}`}>
+                                            <td className="py-5 px-6 pl-8">
+                                                <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm">
                                                         {user.profilePic ? (
                                                             <img
@@ -481,38 +641,104 @@ const AdminUsersPage = () => {
                                                                 className="w-full h-full object-cover"
                                                                 onError={(e) => { e.target.style.display = 'none'; }}
                                                             />
-                                                        ) : null}
+                                                        ) : (
+                                                            <img
+                                                                src="/default-avatar.svg"
+                                                                alt="default"
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                                            />
+                                                        )}
                                                         <span className="text-slate-400 font-bold text-xs uppercase">
                                                             {user.name?.charAt(0) || 'U'}
                                                         </span>
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-slate-900 text-[14px] leading-tight mb-1">{user.name || 'Anonymous User'}</p>
+                                                        <p className="font-bold text-slate-900 text-[14px] leading-tight">{user.name || 'Anonymous User'}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-6 px-8">
+                                            <td className="py-5 px-6">
                                                 <span className="text-[14px] font-medium text-slate-500">
                                                     {user.email || 'N/A'}
                                                 </span>
                                             </td>
-                                            <td className="py-6 px-8 text-center">
-                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none inline-block ${role === 'Admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'}`}>
+                                            <td className="py-5 px-6 text-center">
+                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest leading-none inline-block ${
+                                                    role === 'Super Admin' ? 'bg-amber-50 text-amber-600' :
+                                                    role === 'Admin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'
+                                                }`}>
                                                     {role}
                                                 </span>
                                             </td>
-                                            <td className="py-6 px-8 text-center text-[13px] font-bold text-slate-500">
-                                                {user.createdAt ? (user.createdAt.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : new Date(user.createdAt).toLocaleDateString()) : 'Oct 12, 2023'}
+                                            <td className="py-5 px-6 text-center text-[13px] font-bold text-slate-500">
+                                                {user.createdAt ? (user.createdAt.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : new Date(user.createdAt).toLocaleDateString()) : 'N/A'}
                                             </td>
-                                            <td className="py-6 px-8 text-right pr-10">
-                                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${accStatus === 'Active'
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    : 'bg-red-50 text-red-600 border-red-100'
-                                                    }`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${accStatus === 'Active' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                            <td className="py-5 px-6 text-center">
+                                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${
+                                                    accStatus === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                    accStatus === 'Disabled' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                    'bg-red-50 text-red-600 border-red-100'
+                                                }`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                                        accStatus === 'Active' ? 'bg-emerald-500' :
+                                                        accStatus === 'Disabled' ? 'bg-amber-500' : 'bg-red-500'
+                                                    }`} />
                                                     {accStatus}
                                                 </div>
                                             </td>
+                                            {filterStatus === 'admins' && user.isAdmin && (
+                                                <td className="py-5 px-6 text-center">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        {user.role === 'Admin' ? (
+                                                            <button
+                                                                onClick={() => requireSuperAdmin({ type: 'promote', admin: user })}
+                                                                className="p-2 rounded-lg text-purple-500 hover:bg-purple-50 transition-colors cursor-pointer"
+                                                                title="Promote to Super Admin"
+                                                            >
+                                                                <ShieldCheck className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => requireSuperAdmin({ type: 'demote', admin: user })}
+                                                                className="p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
+                                                                title="Demote to Admin"
+                                                            >
+                                                                <ShieldOff className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {user.isDisabled ? (
+                                                            <button
+                                                                onClick={() => requireSuperAdmin({ type: 'enable', admin: user })}
+                                                                className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-50 transition-colors cursor-pointer"
+                                                                title="Enable Admin"
+                                                            >
+                                                                <CheckCircle className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => requireSuperAdmin({ type: 'disable', admin: user })}
+                                                                className="p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
+                                                                title="Disable Admin"
+                                                            >
+                                                                <Ban className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            onClick={() => requireSuperAdmin({ type: 'delete', admin: user })}
+                                                            className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                                            title="Delete Admin"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            )}
+                                            {filterStatus === 'admins' && !user.isAdmin && (
+                                                <td className="py-5 px-6 text-center">
+                                                    <span className="text-xs text-slate-300">—</span>
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })}
@@ -689,6 +915,177 @@ const AdminUsersPage = () => {
                     </div>
                 )}
             </Modal>
+
+            {/* Super Admin Password Modal */}
+            <Modal
+                isOpen={showPasswordModal}
+                onClose={() => { setShowPasswordModal(false); setSuperAdminPassword(''); setPasswordError(''); setPendingAdminAction(null); }}
+                title="Super Admin Verification"
+                size="sm"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-500">Enter the Super Admin password to perform this action.</p>
+                    <div className="relative">
+                        <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter super admin password"
+                            value={superAdminPassword}
+                            onChange={(e) => { setSuperAdminPassword(e.target.value); setPasswordError(''); }}
+                            icon={<Lock className="w-4 h-4" />}
+                            className="pr-10"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                    </div>
+                    {passwordError && <p className="text-sm text-red-500 font-medium">{passwordError}</p>}
+                    <div className="flex gap-3 pt-2">
+                        <Button variant="outline" fullWidth onClick={() => { setShowPasswordModal(false); setSuperAdminPassword(''); setPasswordError(''); setPendingAdminAction(null); }}>Cancel</Button>
+                        <Button variant="primary" fullWidth onClick={verifySuperAdminPassword}>Verify</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Add Admin Modal */}
+            <Modal
+                isOpen={showAddAdminModal}
+                onClose={() => { setShowAddAdminModal(false); setNewAdmin({ name: '', email: '', password: '', role: 'Admin', userId: '' }); setAdminSearchTerm(''); setShowUserDropdown(false); }}
+                title="Promote User to Administrator"
+                size="md"
+            >
+                <div className="space-y-4">
+                    {/* User Search */}
+                    <div className="relative">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Search User *</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Type name or email to search users..."
+                                value={adminSearchTerm}
+                                onChange={(e) => {
+                                    setAdminSearchTerm(e.target.value);
+                                    setShowUserDropdown(true);
+                                    if (!e.target.value) {
+                                        setNewAdmin({ ...newAdmin, name: '', email: '', userId: '' });
+                                    }
+                                }}
+                                onFocus={() => setShowUserDropdown(true)}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
+                        </div>
+                        {/* Dropdown */}
+                        {showUserDropdown && adminSearchTerm.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                {users
+                                    .filter(u => u.role === 'User' && !u.isAdmin && (
+                                        u.name?.toLowerCase().includes(adminSearchTerm.toLowerCase()) ||
+                                        u.email?.toLowerCase().includes(adminSearchTerm.toLowerCase())
+                                    ))
+                                    .length === 0 ? (
+                                    <div className="px-4 py-3 text-sm text-slate-400 text-center">No matching users found</div>
+                                ) : (
+                                    users
+                                        .filter(u => u.role === 'User' && !u.isAdmin && (
+                                            u.name?.toLowerCase().includes(adminSearchTerm.toLowerCase()) ||
+                                            u.email?.toLowerCase().includes(adminSearchTerm.toLowerCase())
+                                        ))
+                                        .slice(0, 10)
+                                        .map(u => (
+                                            <button
+                                                key={u.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setNewAdmin({ ...newAdmin, name: u.name || '', email: u.email || '', userId: u.id });
+                                                    setAdminSearchTerm(u.name ? `${u.name} (${u.email})` : u.email);
+                                                    setShowUserDropdown(false);
+                                                }}
+                                                className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-b-0"
+                                            >
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0 border border-slate-200">
+                                                    {u.profilePic ? (
+                                                        <img src={u.profilePic} alt="" className="w-full h-full rounded-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-xs font-bold text-slate-400">{u.name?.charAt(0) || 'U'}</span>
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate">{u.name || 'Anonymous'}</p>
+                                                    <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                                                </div>
+                                            </button>
+                                        ))
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Selected User Info */}
+                    {newAdmin.userId && (
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+                                <Users className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-slate-900">{newAdmin.name || 'Anonymous'}</p>
+                                <p className="text-xs text-slate-500">{newAdmin.email}</p>
+                            </div>
+                            <button
+                                onClick={() => { setNewAdmin({ ...newAdmin, name: '', email: '', userId: '' }); setAdminSearchTerm(''); }}
+                                className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                            >
+                                <Slash className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Password */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Admin Password *</label>
+                        <Input
+                            type="password"
+                            placeholder="Set a password for admin login"
+                            value={newAdmin.password}
+                            onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                            icon={<Lock className="w-4 h-4" />}
+                            required
+                        />
+                    </div>
+
+                    {/* Role */}
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Role</label>
+                        <select
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            value={newAdmin.role}
+                            onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })}
+                        >
+                            <option value="Admin">Admin</option>
+                            <option value="Super Admin">Super Admin</option>
+                        </select>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <Button variant="outline" fullWidth onClick={() => { setShowAddAdminModal(false); setNewAdmin({ name: '', email: '', password: '', role: 'Admin', userId: '' }); setAdminSearchTerm(''); }}>Cancel</Button>
+                        <Button variant="primary" fullWidth onClick={handleAddAdmin} disabled={!newAdmin.userId} icon={<Plus className="w-4 h-4" />}>Promote to Admin</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={() => handleDeleteAdmin(confirmDelete)}
+                title="Delete Administrator"
+                message={`Are you sure you want to permanently delete "${confirmDelete?.name || confirmDelete?.email}"? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="danger"
+            />
         </div>
     );
 };

@@ -7,23 +7,17 @@ import {
   Truck,
   RefreshCw,
   Star,
-  Quote,
-  Stethoscope,
-  UserCheck,
   Loader2,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 import Button from '../components/Button';
 import ProductCard from '../components/ProductCard';
-import { getReviews } from '../services/reviewService';
 import { useData } from '../context/DataContext';
 import ReadingMaterials from '../components/ReadingMaterials';
 
 export default function HomePage() {
   const { products: dataProducts, categories: dataCategories, blogs, productsLoading, categoriesLoading, blogsLoading } = useData();
-  const [reviews, setReviews] = useState([]);
-  const [reviewFilter, setReviewFilter] = useState('all');
   const [activeFaq, setActiveFaq] = useState(0);
 
   // Compute categories with product counts
@@ -64,53 +58,6 @@ export default function HomePage() {
     }
   ];
 
-  useEffect(() => {
-    async function fetchReviews() {
-      try {
-        const revs = await getReviews();
-        if (revs && revs.length > 0) {
-          setReviews(revs);
-        } else {
-          setReviews([
-            {
-              id: '1',
-              name: 'Dr. James Chen',
-              role: 'Pulmonologist, Bay Area Sleep Clinic',
-              avatar: 'https://i.pravatar.cc/150?u=james',
-              rating: 5,
-              type: 'doctor',
-              text: 'I recommend MedEquip Pro to all my patients who need CPAP supplies. The product quality matches what we use in-clinic, and the subscribe-and-save model ensures my patients stay compliant with their therapy.',
-              date: '1 month ago'
-            },
-            {
-              id: '2',
-              name: 'Sarah Mitchell',
-              role: 'Type 1 Diabetic for 12 years',
-              avatar: 'https://i.pravatar.cc/150?u=sarah',
-              rating: 5,
-              type: 'patient',
-              text: 'Having a reliable source for FDA-cleared glucose monitors and test strips is essential for my daily routine. MedEquip Pro consistently delivers quality products, and the business ordering process is simple.',
-              date: '2 weeks ago'
-            },
-            {
-              id: '3',
-              name: 'Dr. Robert Kim',
-              role: 'Sports Medicine Physician',
-              avatar: 'https://i.pravatar.cc/150?u=robert',
-              rating: 4,
-              type: 'doctor',
-              text: 'The healthcare products provided here are excellent. High build quality with proper support. I’ve started recommending these for all home health needs.',
-              date: '3 weeks ago'
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Error fetching reviews:', err);
-      }
-    }
-    fetchReviews();
-  }, []);
-
   // Handle hash scroll
   useEffect(() => {
     if (window.location.hash) {
@@ -123,10 +70,6 @@ export default function HomePage() {
       }
     }
   }, [window.location.hash]);
-
-  const filteredReviews = reviewFilter === 'all'
-    ? reviews
-    : reviews.filter((r) => r.type === reviewFilter);
 
   if (loading) {
     return (
@@ -273,74 +216,6 @@ export default function HomePage() {
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Reviews Section — Patient & Doctor Reviews */}
-      {reviews.length > 0 && (
-        <section className="container-main py-16">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-text-primary mb-3">Trusted by Patients &amp; Practitioners</h2>
-            <p className="text-text-secondary max-w-xl mx-auto">
-              Real reviews from real people — healthcare professionals and patients who depend on our products every day
-            </p>
-            <div className="flex items-center justify-center gap-2 mt-6">
-              {[
-                { label: 'All Reviews', value: 'all' },
-                { label: 'Patient Reviews', value: 'patient', icon: UserCheck },
-                { label: 'Practitioner Reviews', value: 'doctor', icon: Stethoscope },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setReviewFilter(tab.value)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${reviewFilter === tab.value
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-gray-100 text-text-secondary hover:bg-gray-200'
-                    }`}
-                >
-                  {tab.icon && <tab.icon size={14} />}
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredReviews.map((review) => (
-              <div
-                key={review.id}
-                className="bg-white rounded-xl border border-border p-6 hover:shadow-md transition-shadow relative"
-              >
-                <Quote size={24} className="text-primary/15 absolute top-4 right-4" />
-                <div className="flex items-center gap-3 mb-4">
-                  <img
-                    src={review.avatar}
-                    alt={review.name}
-                    className="w-11 h-11 rounded-full object-cover ring-2 ring-border"
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">{review.name}</p>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${review.type === 'doctor'
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'bg-green-50 text-green-600'
-                        }`}>
-                        {review.type === 'doctor' ? '🩺 Practitioner' : '💚 Patient'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-text-secondary mb-2">{review.role}</p>
-                <div className="flex items-center gap-0.5 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={13} className={i < review.rating ? 'text-warning fill-warning' : 'text-gray-200 fill-gray-200'} />
-                  ))}
-                </div>
-                <p className="text-sm text-text-secondary leading-relaxed">{review.text}</p>
-                <p className="text-[11px] text-gray-400 mt-3">{review.date}</p>
-              </div>
-            ))}
           </div>
         </section>
       )}
