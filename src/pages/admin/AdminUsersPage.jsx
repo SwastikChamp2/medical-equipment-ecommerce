@@ -633,25 +633,10 @@ const AdminUsersPage = () => {
                                         <tr key={user.id} className={`hover:bg-slate-50/50 transition-colors group ${user.isDisabled ? 'opacity-50' : ''}`}>
                                             <td className="py-5 px-6 pl-8">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm">
-                                                        {user.profilePic ? (
-                                                            <img
-                                                                src={user.profilePic}
-                                                                alt={user.name}
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                                            />
-                                                        ) : (
-                                                            <img
-                                                                src="/default-avatar.svg"
-                                                                alt="default"
-                                                                className="w-full h-full object-cover"
-                                                                onError={(e) => { e.target.style.display = 'none'; }}
-                                                            />
-                                                        )}
-                                                        <span className="text-slate-400 font-bold text-xs uppercase">
-                                                            {user.name?.charAt(0) || 'U'}
-                                                        </span>
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 flex items-center justify-center border-2 border-white shadow-sm">
+                                                        <svg className="w-6 h-6 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                                                        </svg>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-slate-900 text-[14px] leading-tight">{user.name || 'Anonymous User'}</p>
