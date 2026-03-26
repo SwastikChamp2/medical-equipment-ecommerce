@@ -54,7 +54,7 @@ export default function SignInPage() {
             // Keep the email field populated so they don't have to re-type it
           }, 4000);
         } else {
-          navigate('/profile');
+          navigate('/');
         }
       } else {
         setError(result.error || 'Authentication failed');
@@ -77,7 +77,7 @@ export default function SignInPage() {
     try {
       const result = await signInWithGoogle();
       if (result.success) {
-        navigate('/profile');
+        navigate('/');
       } else {
         setError(result.error || 'Google sign-in failed');
       }

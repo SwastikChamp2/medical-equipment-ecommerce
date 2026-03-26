@@ -99,10 +99,13 @@ export default function CheckoutPage() {
       const firstName = names[0] || '';
       const lastName = names.slice(1).join(' ') || '';
 
-      const addresses = user.addresses || [];
+      const addresses = (user.addresses || []).map((a, i) => ({
+        ...a,
+        id: a.id || `addr_${i}`
+      }));
       const defaultAddress = addresses.find(a => a.isDefault) || addresses[0] || {};
 
-      setSelectedAddressId(defaultAddress.id || (addresses.length === 0 ? 'new' : null));
+      setSelectedAddressId(addresses.length > 0 ? defaultAddress.id : 'new');
 
       setFormData({
         firstName: firstName || '',
@@ -261,7 +264,7 @@ export default function CheckoutPage() {
     }
 
     // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.streetAddress || !formData.city) {
+    if (!formData.firstName || !formData.streetAddress || !formData.city) {
       toast.error('Please fill in all required shipping fields');
       return;
     }

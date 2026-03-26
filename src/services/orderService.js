@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, query, where, addDoc, updateDoc, increment, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, addDoc, updateDoc, increment, runTransaction, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const COLLECTION = 'orders';
@@ -117,4 +117,46 @@ export async function getOrderById(orderId) {
     return { id: d.id, ...d.data() };
   }
   return null;
+}
+
+export async function cancelOrder(orderId) {
+  const ref = doc(db, COLLECTION, orderId);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) throw new Error('Order not found');
+
+  const order = snap.data();
+  const status = (order.status || '').toLowerCase();
+
+  if (!['placed', 'processing'].includes(status)) {
+    throw new Error('Only orders with status Placed or Processing can be cancelled');
+  }
+
+  // Update order status
+  await updateDoc(ref, {
+    status: 'Cancelled',
+    statusHistory: [
+      ...(order.statusHistory || []),
+      {
+        status: 'Cancelled',
+        timestamp: new Date().toISOString(),
+        note: 'Cancelled by customer',
+      }
+    ],
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Restore stock for product items
+  const items = order.items || [];
+  for (const item of items) {
+    if (item.category === 'Services' || String(item.id).startsWith('service-')) continue;
+    try {
+      const productRef = doc(db, 'products', item.id);
+      await updateDoc(productRef, { stock: increment(item.quantity || 1) });
+    } catch (err) {
+      console.warn(`Failed to restore stock for ${item.id}:`, err.message);
+    }
+  }
+
+  return { success: true };
 }

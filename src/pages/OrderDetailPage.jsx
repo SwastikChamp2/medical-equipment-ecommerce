@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Package, Truck, MapPin, Copy, CheckCircle, Clock, ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
+import { Package, Truck, MapPin, Copy, CheckCircle, Clock, ArrowLeft, Loader2, RefreshCcw, XCircle } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import Breadcrumbs from '../components/Breadcrumbs';
 import Button from '../components/Button';
 import { formatCurrency } from '../utils/formatUtils';
-import { getOrderById } from '../services/orderService';
+import { getOrderById, cancelOrder } from '../services/orderService';
 import { useCart } from '../context/CartContext';
+import { toast } from 'react-toastify';
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -14,6 +15,7 @@ export default function OrderDetailPage() {
   const { addToCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     async function fetchOrder() {
@@ -49,6 +51,23 @@ export default function OrderDetailPage() {
     // Redirect to cart
     navigate('/cart');
   };
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleCancelOrder = async () => {
+    setShowCancelConfirm(false);
+    setIsCancelling(true);
+    try {
+      await cancelOrder(order.id);
+      setOrder(prev => ({ ...prev, status: 'Cancelled' }));
+      toast.success('Order cancelled successfully');
+    } catch (err) {
+      toast.error(err.message || 'Failed to cancel order');
+    }
+    setIsCancelling(false);
+  };
+
+  const canCancel = order && ['placed', 'processing'].includes((order.status || '').toLowerCase());
 
   if (loading) {
     return (
@@ -226,11 +245,23 @@ export default function OrderDetailPage() {
             )}
           </div>
 
-          <Button 
-            variant="primary" 
-            size="md" 
-            icon={RefreshCcw} 
-            onClick={handleRepeatOrder} 
+          {canCancel && (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setShowCancelConfirm(true)}
+              disabled={isCancelling}
+              className="w-full"
+            >
+              {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+            </Button>
+          )}
+
+          <Button
+            variant="primary"
+            size="md"
+            icon={RefreshCcw}
+            onClick={handleRepeatOrder}
             className="w-full"
           >
             Repeat this Order
@@ -241,6 +272,37 @@ export default function OrderDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <XCircle size={20} className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-text-primary">Cancel Order</h3>
+            </div>
+            <p className="text-sm text-text-secondary mb-6">
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-text-secondary hover:bg-gray-50 transition-colors"
+              >
+                Keep Order
+              </button>
+              <button
+                onClick={handleCancelOrder}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
